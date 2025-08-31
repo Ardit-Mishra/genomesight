@@ -44,7 +44,11 @@ def create_gc_content_plot(gc_contents: List[float], file_labels: List[str]) -> 
         xaxis_title="GC Content (%)",
         yaxis_title="Number of Sequences",
         showlegend=True,
-        height=500
+        height=500,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
     )
     
     return fig
@@ -93,7 +97,11 @@ def create_nucleotide_composition_plot(composition_data: Dict[str, Dict[str, int
         yaxis_title='Percentage (%)',
         barmode='stack',
         height=500,
-        showlegend=True
+        showlegend=True,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
     )
     
     return fig
@@ -149,7 +157,11 @@ def create_sequence_length_plot(lengths: List[int], file_labels: List[str]) -> g
     fig.update_layout(
         title='Sequence Length Analysis',
         height=800,
-        showlegend=True
+        showlegend=True,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
     )
     
     fig.update_xaxes(title_text="Sequence Length (bp)", row=1, col=1)
@@ -238,7 +250,11 @@ def create_quality_scores_plot(quality_data: List[List[float]], filename: str) -
         xaxis_title='Position in Read',
         yaxis_title='Quality Score',
         height=500,
-        showlegend=True
+        showlegend=True,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
     )
     
     return fig
