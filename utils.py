@@ -5,10 +5,12 @@ import pandas as pd
 import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
+import hashlib
+import time
 
 def validate_file_format(file_content: str, filename: str) -> Optional[str]:
     """
-    Validate file format based on content and filename
+    Enhanced file format validation with detailed feedback
     
     Args:
         file_content (str): Content of the uploaded file
@@ -35,19 +37,118 @@ def validate_file_format(file_content: str, filename: str) -> Optional[str]:
         elif file_content.startswith('@'):
             return 'fastq'
         
+        # Provide helpful error messages
+        st.error(f"⚠️ **File format not recognized: {filename}**")
+        st.markdown("""**Supported formats:**
+        - **FASTA**: Must start with `>` followed by sequence identifier
+        - **FASTQ**: Must start with `@` followed by sequence identifier
+        
+        **Example FASTA:**
+        ```
+        >sequence_1
+        ATCGATCGATCG
+        ```
+        
+        **Example FASTQ:**
+        ```
+        @sequence_1
+        ATCGATCGATCG
+        +
+        !!!!!!!!!!!!!
+        ```""")
         return None
-    except Exception:
+    except Exception as e:
+        st.error(f"Error validating file {filename}: {str(e)}")
         return None
+
+@st.cache_data(show_spinner="Processing files...", ttl=3600)
+def parse_uploaded_files_cached(file_data_list: List[tuple]) -> Dict[str, Dict[str, Any]]:
+    """
+    Cached version of file parsing to avoid reprocessing identical files
+    
+    Args:
+        file_data_list: List of (filename, content, file_hash) tuples
+        
+    Returns:
+        Dict[str, Dict[str, Any]]: Parsed file data
+    """
+    parsed_files = {}
+    
+    for filename, content, file_hash in file_data_list:
+        try:
+            # Validate format
+            file_format = validate_file_format(content, filename)
+            
+            if not file_format:
+                st.warning(f"Invalid format for file {filename}. Skipping.")
+                continue
+            
+            # Parse sequences
+            content_io = StringIO(content)
+            sequences = list(SeqIO.parse(content_io, file_format))
+            
+            if not sequences:
+                st.warning(f"No sequences found in {filename}. Skipping.")
+                continue
+            
+            parsed_files[filename] = {
+                'format': file_format,
+                'sequences': sequences,
+                'content': content,
+                'file_hash': file_hash,
+                'processed_at': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            st.error(f"Error parsing file {filename}: {str(e)}")
+            continue
+    
+    return parsed_files
 
 def parse_uploaded_files(uploaded_files) -> Dict[str, Dict[str, Any]]:
     """
-    Parse uploaded sequence files
+    Parse uploaded sequence files with caching
     
     Args:
         uploaded_files: Streamlit uploaded files
         
     Returns:
         Dict[str, Dict[str, Any]]: Parsed file data
+    """
+    if not uploaded_files:
+        return {}
+    
+    # Prepare data for caching
+    file_data_list = []
+    
+    for uploaded_file in uploaded_files:
+        try:
+            # Read file content
+            content = uploaded_file.read()
+            
+            # Try to decode as text
+            try:
+                if isinstance(content, bytes):
+                    content = content.decode('utf-8')
+            except UnicodeDecodeError:
+                st.error(f"Could not decode file {uploaded_file.name}. Please ensure it's a text file.")
+                continue
+            
+            # Generate file hash for caching
+            file_hash = hashlib.md5(content.encode()).hexdigest()
+            
+            file_data_list.append((uploaded_file.name, content, file_hash))
+            
+        except Exception as e:
+            st.error(f"Error reading file {uploaded_file.name}: {str(e)}")
+            continue
+    
+    # Use cached parsing
+    return parse_uploaded_files_cached(file_data_list)
+
+def parse_uploaded_files_legacy(uploaded_files) -> Dict[str, Dict[str, Any]]:
+    """
+    Legacy version - kept for reference
     """
     parsed_files = {}
     
@@ -287,6 +388,59 @@ def get_sequence_type(sequence: str) -> str:
     else:
         return 'Unknown'
 
+def validate_sequence_data(sequences: List) -> Dict[str, Any]:
+    """
+    Validate sequence data quality and provide recommendations
+    
+    Args:
+        sequences: List of Bio.SeqRecord objects
+        
+    Returns:
+        Dict: Validation results and recommendations
+    """
+    validation_results = {
+        'is_valid': True,
+        'warnings': [],
+        'recommendations': [],
+        'quality_score': 100
+    }
+    
+    if not sequences:
+        validation_results['is_valid'] = False
+        validation_results['warnings'].append("No sequences found")
+        return validation_results
+    
+    # Check sequence lengths
+    lengths = [len(seq.seq) for seq in sequences]
+    avg_length = sum(lengths) / len(lengths)
+    
+    if avg_length < 10:
+        validation_results['warnings'].append("⚠️ Very short sequences detected (avg < 10 bp)")
+        validation_results['recommendations'].append("Consider checking if sequences are complete")
+        validation_results['quality_score'] -= 20
+    
+    # Check for invalid characters
+    invalid_chars = set()
+    valid_chars = set('ATCGRYSWKMBDHVNU')
+    
+    for seq in sequences[:10]:  # Sample first 10 sequences
+        seq_chars = set(str(seq.seq).upper())
+        invalid_chars.update(seq_chars - valid_chars)
+    
+    if invalid_chars:
+        validation_results['warnings'].append(f"⚠️ Non-standard nucleotide characters found: {', '.join(invalid_chars)}")
+        validation_results['recommendations'].append("Consider cleaning sequence data")
+        validation_results['quality_score'] -= 10
+    
+    # Check sequence count
+    if len(sequences) < 5:
+        validation_results['recommendations'].append("💡 Small dataset - consider adding more sequences for robust statistics")
+    
+    if len(sequences) > 10000:
+        validation_results['recommendations'].append("⚡ Large dataset detected - analysis may take longer")
+    
+    return validation_results
+
 @st.cache_data
 def load_sample_data():
     """
@@ -299,6 +453,58 @@ def load_sample_data():
     # This would normally load from a file or database
     # For now, return empty dict since we don't want mock data
     return {}
+
+def create_batch_download_zip(results: Dict[str, Dict[str, Any]]) -> bytes:
+    """
+    Create a ZIP file containing all analysis results
+    
+    Args:
+        results: Analysis results dictionary
+        
+    Returns:
+        bytes: ZIP file content
+    """
+    import zipfile
+    from io import BytesIO
+    
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # Add CSV report
+        csv_data = generate_report(results, 'csv')
+        zip_file.writestr('analysis_report.csv', csv_data)
+        
+        # Add JSON report
+        json_data = generate_report(results, 'json')
+        zip_file.writestr('analysis_report.json', json_data)
+        
+        # Add full text report
+        full_report = generate_report(results, 'full')
+        zip_file.writestr('full_analysis_report.txt', full_report)
+        
+        # Add summary
+        summary = export_analysis_summary(results)
+        zip_file.writestr('analysis_summary.txt', summary)
+        
+        # Add README
+        readme_content = """📋 GENOME ANALYSIS RESULTS
+=========================
+
+This archive contains your complete genome sequence analysis results:
+
+📊 analysis_report.csv     - Spreadsheet-ready data
+📋 analysis_report.json    - Structured data for APIs
+📄 full_analysis_report.txt - Comprehensive text report
+📝 analysis_summary.txt    - Shareable summary
+
+🧬 Generated by Genome Sequencing Analyzer
+🌐 Available at: arditmishra.com
+
+Happy analyzing! 🚀"""
+        zip_file.writestr('README.txt', readme_content)
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()
 
 def export_sequences_to_fasta(sequences: List, filename: str) -> str:
     """
@@ -330,3 +536,58 @@ def export_sequences_to_fasta(sequences: List, filename: str) -> str:
             fasta_lines.append(sequence_str[j:j+80])
     
     return '\n'.join(fasta_lines)
+
+def export_analysis_summary(results: Dict[str, Dict[str, Any]]) -> str:
+    """
+    Create a shareable analysis summary
+    
+    Args:
+        results: Analysis results dictionary
+        
+    Returns:
+        str: Formatted summary for sharing
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    summary_lines = [
+        "🧬 GENOME ANALYSIS SUMMARY",
+        "=" * 50,
+        f"📅 Generated: {timestamp}",
+        f"🔬 Tool: Genome Sequencing Analyzer",
+        f"🌐 Available at: arditmishra.com",
+        "",
+        "📊 QUICK STATS",
+        "-" * 30
+    ]
+    
+    total_files = len(results)
+    total_sequences = sum(data['sequence_count'] for data in results.values())
+    total_nucleotides = sum(data['total_length'] for data in results.values())
+    avg_gc = sum(data['average_gc_content'] for data in results.values()) / total_files if total_files > 0 else 0
+    
+    summary_lines.extend([
+        f"📁 Files analyzed: {total_files}",
+        f"🧬 Total sequences: {total_nucleotides:,}",
+        f"📏 Total nucleotides: {total_nucleotides:,}",
+        f"⚖️ Average GC content: {avg_gc:.1f}%",
+        "",
+        "🔍 DETAILED RESULTS",
+        "-" * 30
+    ])
+    
+    for filename, data in results.items():
+        summary_lines.extend([
+            f"\n📄 {filename}",
+            f"   Format: {data['format'].upper()}",
+            f"   Sequences: {data['sequence_count']:,}",
+            f"   Length: {data['total_length']:,} bp",
+            f"   GC Content: {data['average_gc_content']:.1f}%"
+        ])
+    
+    summary_lines.extend([
+        "",
+        "🚀 Ready for publication-quality analysis!",
+        "📧 Share this summary with your research team"
+    ])
+    
+    return "\n".join(summary_lines)

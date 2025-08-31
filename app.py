@@ -7,10 +7,12 @@ from io import StringIO, BytesIO
 import zipfile
 import json
 from datetime import datetime
+import hashlib
+import time
 
 from sequence_analyzer import SequenceAnalyzer
-from visualizations import create_gc_content_plot, create_nucleotide_composition_plot, create_sequence_length_plot, create_quality_scores_plot
-from utils import validate_file_format, parse_uploaded_files, generate_report
+from visualizations import create_gc_content_plot, create_nucleotide_composition_plot, create_sequence_length_plot, create_quality_scores_plot, create_interactive_sequence_logo, create_comparative_analysis_plot
+from utils import validate_file_format, parse_uploaded_files, generate_report, export_analysis_summary, create_batch_download_zip, validate_sequence_data
 
 # Page configuration
 st.set_page_config(
@@ -237,17 +239,57 @@ def main():
             help="Number of sequences to process at once - larger batches are faster but use more memory"
         )
         
-        # Analysis button
+        # Real-time parameter updates
+        current_params = {
+            'gc_content': analyze_gc_content,
+            'composition': analyze_composition,
+            'quality': analyze_quality,
+            'pattern': search_pattern,
+            'batch_size': batch_size
+        }
+        
+        # Check if parameters changed
+        params_changed = current_params != st.session_state.get('analysis_params', {})
+        if params_changed:
+            st.session_state.analysis_params = current_params
+        
+        # Advanced filtering options
+        st.markdown("**🔬 Advanced Filters**")
+        with st.expander("Filter Options", expanded=False):
+            min_length = st.number_input("Minimum sequence length", min_value=1, value=1, help="Filter out sequences shorter than this length")
+            max_length = st.number_input("Maximum sequence length", min_value=1, value=100000, help="Filter out sequences longer than this length")
+            gc_range = st.slider("GC Content Range (%)", 0.0, 100.0, (0.0, 100.0), help="Only analyze sequences within this GC content range")
+        
+        # Real-time search with debouncing
+        if search_pattern:
+            st.markdown(f"🔍 **Live Pattern Search**: *{search_pattern.upper()}*")
+            if len(search_pattern) >= 3:
+                st.info(f"✓ Pattern is valid for search ({len(search_pattern)} nucleotides)")
+            else:
+                st.warning("⚠️ Pattern should be at least 3 nucleotides for reliable results")
+        
+        # Analysis button with enhanced feedback
         if uploaded_files:
-            if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
-                st.balloons()
-                st.success("🎉 Analysis started! Check the tabs below for results.")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
+                    st.balloons()
+                    st.success("🎉 Analysis started! Check the tabs below for results.")
+            with col2:
+                if st.button("🔄 Reset Analysis", use_container_width=True):
+                    st.session_state.analysis_results = {}
+                    st.session_state.processed_files_cache = {}
+                    st.success("Analysis cache cleared!")
         
     # Main content area
     if uploaded_files:
-        # Initialize session state for results
+        # Initialize session state for results and caching
         if 'analysis_results' not in st.session_state:
             st.session_state.analysis_results = {}
+        if 'processed_files_cache' not in st.session_state:
+            st.session_state.processed_files_cache = {}
+        if 'analysis_params' not in st.session_state:
+            st.session_state.analysis_params = {}
         
         # Process files with enhanced progress feedback
         progress_container = st.container()
@@ -266,8 +308,26 @@ def main():
                     status_text.text("✅ Processing complete!")
                     st.success(f"🎉 Successfully loaded {len(processed_files)} files with {sum(len(data['sequences']) for data in processed_files.values())} total sequences")
                     
-                    # Create tabs for different views
-                    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "🔬 Detailed Analysis", "📈 Visualizations", "📥 Download Results"])
+                    # Data quality validation
+                    for filename, data in processed_files.items():
+                        validation = validate_sequence_data(data['sequences'])
+                        if validation['warnings']:
+                            with st.expander(f"⚠️ Quality Check: {filename}", expanded=False):
+                                for warning in validation['warnings']:
+                                    st.warning(warning)
+                                for rec in validation['recommendations']:
+                                    st.info(rec)
+                                st.metric("Data Quality Score", f"{validation['quality_score']}/100")
+                        else:
+                            st.success(f"✅ {filename}: High quality data (100/100)")
+                    
+                    # Create tabs for different views with enhanced descriptions
+                    tab1, tab2, tab3, tab4 = st.tabs([
+                        "📊 Overview", 
+                        "🔬 Detailed Analysis", 
+                        "📈 Interactive Charts", 
+                        "📥 Export & Share"
+                    ])
                     
                     with tab1:
                         display_overview(processed_files)
@@ -503,7 +563,10 @@ def display_detailed_analysis(processed_files, analyze_gc_content, analyze_compo
 
 def display_visualizations(processed_files, analyze_gc_content, analyze_composition, analyze_quality):
     """Display interactive visualizations"""
-    st.markdown('<h2 class="section-header">📈 Visualizations</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">📈 Interactive Visualizations</h2>', unsafe_allow_html=True)
+    
+    # Add helpful guidance
+    st.info("💡 **Tip**: All charts are interactive! Hover, zoom, and click to explore your data in detail.")
     
     if not processed_files:
         st.warning("No files to visualize")
@@ -561,10 +624,60 @@ def display_visualizations(processed_files, analyze_gc_content, analyze_composit
                 if quality_data:
                     qual_fig = create_quality_scores_plot(quality_data, filename)
                     st.plotly_chart(qual_fig, use_container_width=True)
+    
+    # Add new advanced visualizations
+    if len(processed_files) > 1:
+        st.markdown("### 📊 File Comparison Dashboard")
+        st.info("📋 Compare statistics across all uploaded files")
+        comp_fig = create_comparative_analysis_plot(processed_files)
+        st.plotly_chart(comp_fig, use_container_width=True)
+    
+    # Sequence logo for pattern analysis
+    st.markdown("### 🧬 Sequence Logo Analysis")
+    
+    # File selector for sequence logo
+    if len(processed_files) > 1:
+        selected_file = st.selectbox(
+            "Select file for sequence logo analysis",
+            list(processed_files.keys()),
+            help="Choose which file to analyze for nucleotide patterns"
+        )
+        sequences_for_logo = processed_files[selected_file]['sequences']
+    else:
+        selected_file = list(processed_files.keys())[0]
+        sequences_for_logo = processed_files[selected_file]['sequences']
+    
+    # Sequence logo options
+    col1, col2 = st.columns(2)
+    with col1:
+        max_sequences = st.slider(
+            "Number of sequences to analyze", 
+            1, 
+            min(100, len(sequences_for_logo)), 
+            min(50, len(sequences_for_logo)),
+            help="More sequences = more accurate patterns, but slower processing"
+        )
+    with col2:
+        if st.button("🔍 Generate Sequence Logo", type="secondary"):
+            with st.spinner("Analyzing sequence patterns..."):
+                logo_fig = create_interactive_sequence_logo(
+                    sequences_for_logo[:max_sequences],
+                    f"Sequence Logo - {selected_file}"
+                )
+                st.plotly_chart(logo_fig, use_container_width=True)
+                st.success(f"✅ Analyzed {max_sequences} sequences from {selected_file}")
 
 def display_download_section(processed_files):
-    """Display download options"""
-    st.markdown('<h2 class="section-header">📥 Download Results</h2>', unsafe_allow_html=True)
+    """Display enhanced download options"""
+    st.markdown('<h2 class="section-header">📥 Download & Export Results</h2>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    📊 **Export your analysis in multiple formats for different use cases:**
+    - **CSV**: For spreadsheet analysis and data processing
+    - **JSON**: For programmatic access and API integration  
+    - **Text Report**: For documentation and sharing
+    - **Complete Package**: All formats in one convenient ZIP file
+    """)
     
     if not processed_files:
         st.warning("No results to download")
@@ -666,6 +779,34 @@ def display_download_section(processed_files):
             use_container_width=True,
             type="secondary"
         )
+    
+    # Complete package download
+    st.markdown("### 📦 **Complete Analysis Package**")
+    st.markdown("🔥 **Most Popular!** Get everything in one ZIP file")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("📦 Download Complete Package", type="primary", use_container_width=True):
+            with st.spinner("Preparing your complete analysis package..."):
+                zip_data = create_batch_download_zip(results)
+                st.download_button(
+                    label="📦 Download ZIP Package",
+                    data=zip_data,
+                    file_name=f"genome_analysis_complete_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                    mime="application/zip",
+                    use_container_width=True
+                )
+                st.success("✅ Package ready! Contains all reports, data, and documentation.")
+    
+    with col2:
+        if st.button("📧 Generate Shareable Summary", use_container_width=True):
+            summary = export_analysis_summary(results)
+            st.text_area(
+                "Copy and share this summary:",
+                summary,
+                height=200,
+                help="Copy this text to share your results via email, chat, or documents"
+            )
     
     # Preview results
     st.markdown("### 👀 Results Preview")

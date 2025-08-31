@@ -4,6 +4,7 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
+import streamlit as st
 
 def create_gc_content_plot(gc_contents: List[float], file_labels: List[str]) -> go.Figure:
     """
@@ -345,7 +346,179 @@ def create_pattern_distribution_plot(pattern_matches: List[Dict[str, Any]]) -> g
     fig.update_layout(
         xaxis_title="Sequence ID",
         yaxis_title="Number of Matches",
-        height=500
+        height=500,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
+    )
+    
+    return fig
+
+def create_interactive_sequence_logo(sequences: List, title: str = "Sequence Logo") -> go.Figure:
+    """
+    Create an interactive sequence logo visualization
+    
+    Args:
+        sequences: List of Bio.SeqRecord objects
+        title: Plot title
+        
+    Returns:
+        go.Figure: Plotly figure
+    """
+    if not sequences:
+        return go.Figure()
+    
+    # Convert sequences to strings and find common length
+    seq_strings = [str(seq.seq) for seq in sequences[:100]]  # Limit for performance
+    min_length = min(len(seq) for seq in seq_strings)
+    
+    if min_length == 0:
+        return go.Figure()
+    
+    # Calculate position-wise nucleotide frequencies
+    position_data = []
+    nucleotides = ['A', 'T', 'C', 'G']
+    
+    for pos in range(min_length):
+        pos_counts = {'A': 0, 'T': 0, 'C': 0, 'G': 0}
+        valid_count = 0
+        
+        for seq in seq_strings:
+            if pos < len(seq) and seq[pos].upper() in nucleotides:
+                pos_counts[seq[pos].upper()] += 1
+                valid_count += 1
+        
+        if valid_count > 0:
+            for nuc in nucleotides:
+                freq = pos_counts[nuc] / valid_count
+                position_data.append({
+                    'Position': pos + 1,
+                    'Nucleotide': nuc,
+                    'Frequency': freq,
+                    'Count': pos_counts[nuc]
+                })
+    
+    df = pd.DataFrame(position_data)
+    
+    # Create stacked bar chart as sequence logo approximation
+    fig = px.bar(
+        df, 
+        x='Position', 
+        y='Frequency', 
+        color='Nucleotide',
+        title=title,
+        color_discrete_map={
+            'A': '#FF6B6B',  # Red
+            'T': '#4ECDC4',  # Teal  
+            'C': '#45B7D1',  # Blue
+            'G': '#96CEB4'   # Green
+        }
+    )
+    
+    fig.update_layout(
+        xaxis_title="Position",
+        yaxis_title="Nucleotide Frequency",
+        barmode='stack',
+        height=400,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa"),
+        showlegend=True
+    )
+    
+    return fig
+
+def create_comparative_analysis_plot(file_data: Dict[str, Dict]) -> go.Figure:
+    """
+    Create comparative analysis across multiple files
+    
+    Args:
+        file_data: Dictionary of file analysis results
+        
+    Returns:
+        go.Figure: Plotly figure
+    """
+    if not file_data:
+        return go.Figure()
+    
+    # Prepare comparison data
+    comparison_data = []
+    
+    for filename, data in file_data.items():
+        if 'sequences' in data:
+            sequences = data['sequences']
+            lengths = [len(seq.seq) for seq in sequences]
+            
+            comparison_data.append({
+                'File': filename,
+                'Sequence_Count': len(sequences),
+                'Avg_Length': np.mean(lengths) if lengths else 0,
+                'Total_Length': sum(lengths),
+                'Min_Length': min(lengths) if lengths else 0,
+                'Max_Length': max(lengths) if lengths else 0
+            })
+    
+    df = pd.DataFrame(comparison_data)
+    
+    # Create subplots for comparison
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('Sequence Count', 'Average Length', 'Total Length', 'Length Range'),
+        specs=[[{"type": "bar"}, {"type": "bar"}],
+               [{"type": "bar"}, {"type": "scatter"}]]
+    )
+    
+    # Sequence count
+    fig.add_trace(
+        go.Bar(x=df['File'], y=df['Sequence_Count'], name='Count', marker_color='#00d4aa'),
+        row=1, col=1
+    )
+    
+    # Average length
+    fig.add_trace(
+        go.Bar(x=df['File'], y=df['Avg_Length'], name='Avg Length', marker_color='#45B7D1'),
+        row=1, col=2
+    )
+    
+    # Total length
+    fig.add_trace(
+        go.Bar(x=df['File'], y=df['Total_Length'], name='Total Length', marker_color='#96CEB4'),
+        row=2, col=1
+    )
+    
+    # Length range (min-max)
+    fig.add_trace(
+        go.Scatter(
+            x=df['File'], 
+            y=df['Min_Length'], 
+            mode='markers', 
+            name='Min Length',
+            marker=dict(color='#FF6B6B', size=10)
+        ),
+        row=2, col=2
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=df['File'], 
+            y=df['Max_Length'], 
+            mode='markers', 
+            name='Max Length',
+            marker=dict(color='#FECA57', size=10)
+        ),
+        row=2, col=2
+    )
+    
+    fig.update_layout(
+        height=800,
+        title='File Comparison Dashboard',
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa"),
+        showlegend=False
     )
     
     return fig
