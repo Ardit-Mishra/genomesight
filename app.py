@@ -437,14 +437,15 @@ def display_welcome_screen():
     """, unsafe_allow_html=True)
 
 def display_overview(processed_files):
-    """Display overview statistics"""
-    st.markdown('<h2 class="section-header">📊 File Overview</h2>', unsafe_allow_html=True)
+    """Display comprehensive overview with research insights"""
+    st.markdown('<h2 class="section-header">🔍 Comprehensive Dataset Overview</h2>', unsafe_allow_html=True)
     
     if not processed_files:
         st.warning("No files to analyze")
         return
     
-    # Calculate overall statistics
+    # Calculate comprehensive statistics
+    analyzer = SequenceAnalyzer()
     total_sequences = sum(len(data['sequences']) for data in processed_files.values())
     total_nucleotides = sum(
         sum(len(seq.seq) for seq in data['sequences']) 
@@ -452,36 +453,170 @@ def display_overview(processed_files):
     )
     file_types = [data['format'] for data in processed_files.values()]
     
-    # Display metrics
-    col1, col2, col3, col4 = st.columns(4)
+    # Calculate GC content across all files
+    all_gc_contents = []
+    for data in processed_files.values():
+        for seq in data['sequences']:
+            all_gc_contents.append(analyzer.calculate_gc_content(str(seq.seq)))
+    
+    avg_gc_content = np.mean(all_gc_contents) if all_gc_contents else 0
+    avg_length = total_nucleotides / total_sequences if total_sequences > 0 else 0
+    
+    # Enhanced metrics display
+    st.markdown("### 📊 Dataset Statistics")
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
-        st.metric("Files Uploaded", len(processed_files))
+        st.metric(
+            "📁 Files Analyzed", 
+            len(processed_files),
+            help="Number of sequence files processed"
+        )
     
     with col2:
-        st.metric("Total Sequences", total_sequences)
+        st.metric(
+            "🧬 Total Sequences", 
+            f"{total_sequences:,}",
+            help="Total number of individual sequences across all files"
+        )
     
     with col3:
-        st.metric("Total Nucleotides", f"{total_nucleotides:,}")
+        st.metric(
+            "📏 Total Nucleotides", 
+            f"{total_nucleotides:,} bp",
+            help="Combined length of all sequences"
+        )
     
     with col4:
-        st.metric("File Types", f"FASTA: {file_types.count('fasta')}, FASTQ: {file_types.count('fastq')}")
+        st.metric(
+            "⚖️ Average GC Content", 
+            f"{avg_gc_content:.1f}%",
+            help="Overall GC content across the dataset"
+        )
     
-    # File details table
-    st.markdown('<h3 class="section-header">📄 File Details</h3>', unsafe_allow_html=True)
+    with col5:
+        st.metric(
+            "📐 Average Length", 
+            f"{avg_length:.0f} bp",
+            help="Mean sequence length across all sequences"
+        )
     
-    file_details = []
+    # Research insights section
+    st.markdown("### 🔬 Research Insights & Recommendations")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 💡 Dataset Characteristics")
+        
+        # Genome type prediction
+        if 30 <= avg_gc_content <= 45:
+            st.info("🦠 **Mammalian-like GC content** - Suitable for vertebrate genome analysis")
+        elif 45 <= avg_gc_content <= 70:
+            st.info("🦠 **Bacterial-like GC content** - Good for prokaryotic studies")
+        elif avg_gc_content > 70:
+            st.info("🌱 **High-GC content** - May be plant DNA or actinobacteria")
+        else:
+            st.warning("🔬 **Unusual GC content** - Check for contamination or specialized organisms")
+        
+        # Dataset size assessment
+        if total_nucleotides > 1000000:
+            st.success("📊 **Large dataset** - Excellent for comprehensive analysis")
+        elif total_nucleotides > 100000:
+            st.info("📊 **Medium dataset** - Good for standard analysis")
+        else:
+            st.warning("📊 **Small dataset** - Limited analysis options")
+    
+    with col2:
+        st.markdown("#### 🎯 Recommended Analysis")
+        
+        recommendations = []
+        
+        if total_sequences > 50:
+            recommendations.append("🧬 Motif discovery and pattern analysis")
+        if avg_length > 1000:
+            recommendations.append("🔬 ORF prediction and gene analysis")
+        if len(processed_files) > 1:
+            recommendations.append("📊 Comparative genomics analysis")
+        if total_nucleotides > 50000:
+            recommendations.append("🌳 Phylogenetic and evolutionary analysis")
+        
+        if recommendations:
+            for rec in recommendations:
+                st.success(rec)
+        else:
+            st.info("💡 Upload more or longer sequences for advanced analysis")
+    
+    # Enhanced file details
+    st.markdown("### 📄 Detailed File Analysis")
+    
     for filename, data in processed_files.items():
-        file_details.append({
-            'Filename': filename,
-            'Format': data['format'].upper(),
-            'Sequences': len(data['sequences']),
-            'Total Length': sum(len(seq.seq) for seq in data['sequences']),
-            'Avg Length': round(sum(len(seq.seq) for seq in data['sequences']) / len(data['sequences']), 2) if data['sequences'] else 0
-        })
+        with st.expander(f"📁 {filename} - Analysis Summary", expanded=True):
+            sequences = data['sequences']
+            file_length = sum(len(seq.seq) for seq in sequences)
+            file_avg_length = file_length / len(sequences) if sequences else 0
+            
+            # Calculate file-specific GC content
+            file_gc_contents = [analyzer.calculate_gc_content(str(seq.seq)) for seq in sequences]
+            file_avg_gc = np.mean(file_gc_contents) if file_gc_contents else 0
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Format", data['format'].upper())
+                st.metric("Sequences", f"{len(sequences):,}")
+            
+            with col2:
+                st.metric("Total Length", f"{file_length:,} bp")
+                st.metric("Average Length", f"{file_avg_length:.1f} bp")
+            
+            with col3:
+                st.metric("GC Content", f"{file_avg_gc:.1f}%")
+                
+                # Length category
+                if file_avg_length > 5000:
+                    length_cat = "🦣 Long sequences"
+                elif file_avg_length > 1000:
+                    length_cat = "🐘 Medium sequences"
+                else:
+                    length_cat = "🐭 Short sequences"
+                st.write(length_cat)
+            
+            with col4:
+                # File-specific recommendations
+                file_recs = []
+                if len(sequences) > 20:
+                    file_recs.append("Statistical analysis")
+                if file_avg_length > 2000:
+                    file_recs.append("Structural analysis")
+                if file_avg_gc > 60:
+                    file_recs.append("High-GC organism study")
+                
+                if file_recs:
+                    st.success(f"Best for: {', '.join(file_recs)}")
+                else:
+                    st.info("Basic analysis available")
+            
+            # Quick quality assessment
+            quality_score = 100
+            if len(sequences) < 10:
+                quality_score -= 20
+            if file_avg_length < 500:
+                quality_score -= 15
+            if file_avg_gc < 20 or file_avg_gc > 80:
+                quality_score -= 10
+            
+            if quality_score >= 85:
+                st.success(f"✅ Quality Score: {quality_score}/100")
+            elif quality_score >= 65:
+                st.warning(f"⚠️ Quality Score: {quality_score}/100")
+            else:
+                st.error(f"🚨 Quality Score: {quality_score}/100")
     
-    df_details = pd.DataFrame(file_details)
-    st.dataframe(df_details, use_container_width=True)
+    # Data summary
+    st.markdown("### 📈 Analysis Summary")
+    st.success(f"✅ Dataset ready for comprehensive analysis with {len(processed_files)} files and {total_sequences:,} sequences")
+    st.info("🔬 **Advanced features available**: Use the research analysis tabs for motif discovery, codon analysis, phylogenetic studies, and ORF prediction")
 
 def display_detailed_analysis(processed_files, analyze_gc_content, analyze_composition, analyze_quality, search_pattern):
     """Display detailed analysis results"""
