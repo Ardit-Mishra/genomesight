@@ -348,6 +348,213 @@ class SequenceAnalyzer:
         
         return np.mean(complexities) if complexities else 0.0
     
+    def analyze_kmers(self, sequences: List, k: int = 3) -> Dict[str, Any]:
+        """
+        Analyze k-mer frequencies in sequences
+        
+        Args:
+            sequences: List of Bio.SeqRecord objects
+            k: K-mer length (default 3 for codons)
+            
+        Returns:
+            Dict: K-mer analysis results
+        """
+        from collections import Counter
+        import numpy as np
+        
+        all_kmers = Counter()
+        kmer_stats = []
+        
+        for seq_record in sequences:
+            sequence = str(seq_record.seq).upper()
+            sequence_kmers = Counter()
+            
+            # Extract k-mers
+            for i in range(len(sequence) - k + 1):
+                kmer = sequence[i:i+k]
+                if all(base in 'ATCG' for base in kmer):  # Only valid nucleotides
+                    sequence_kmers[kmer] += 1
+                    all_kmers[kmer] += 1
+            
+            # Calculate statistics for this sequence
+            if sequence_kmers:
+                total_kmers = sum(sequence_kmers.values())
+                unique_kmers = len(sequence_kmers)
+                most_common = sequence_kmers.most_common(10)
+                
+                # Calculate diversity metrics
+                frequencies = np.array(list(sequence_kmers.values()))
+                shannon_entropy = -np.sum((frequencies / total_kmers) * np.log2(frequencies / total_kmers))
+                
+                kmer_stats.append({
+                    'sequence_id': seq_record.id,
+                    'total_kmers': total_kmers,
+                    'unique_kmers': unique_kmers,
+                    'diversity': shannon_entropy,
+                    'most_common': most_common,
+                    'kmer_counts': sequence_kmers
+                })
+        
+        # Global statistics
+        total_global_kmers = sum(all_kmers.values())
+        unique_global_kmers = len(all_kmers)
+        global_most_common = all_kmers.most_common(20)
+        
+        # Calculate expected vs observed for GC bias
+        gc_bias_analysis = self._analyze_gc_bias_in_kmers(all_kmers, k)
+        
+        return {
+            'k': k,
+            'global_stats': {
+                'total_kmers': total_global_kmers,
+                'unique_kmers': unique_global_kmers,
+                'most_common': global_most_common,
+                'all_kmers': all_kmers,
+                'gc_bias': gc_bias_analysis
+            },
+            'per_sequence': kmer_stats
+        }
+    
+    def _analyze_gc_bias_in_kmers(self, kmer_counts, k):
+        """Analyze GC bias in k-mer distribution"""
+        gc_rich_kmers = 0
+        at_rich_kmers = 0
+        balanced_kmers = 0
+        
+        for kmer, count in kmer_counts.items():
+            gc_count = kmer.count('G') + kmer.count('C')
+            gc_content = gc_count / len(kmer)
+            
+            if gc_content > 0.6:
+                gc_rich_kmers += count
+            elif gc_content < 0.4:
+                at_rich_kmers += count
+            else:
+                balanced_kmers += count
+        
+        total = gc_rich_kmers + at_rich_kmers + balanced_kmers
+        
+        return {
+            'gc_rich_percent': (gc_rich_kmers / total * 100) if total > 0 else 0,
+            'at_rich_percent': (at_rich_kmers / total * 100) if total > 0 else 0,
+            'balanced_percent': (balanced_kmers / total * 100) if total > 0 else 0
+        }
+    
+    def analyze_reading_frames(self, sequences: List) -> Dict[str, Any]:
+        """
+        Comprehensive reading frame analysis
+        
+        Args:
+            sequences: List of Bio.SeqRecord objects
+            
+        Returns:
+            Dict: Reading frame analysis results
+        """
+        reading_frame_stats = []
+        
+        for seq_record in sequences:
+            sequence = str(seq_record.seq).upper()
+            seq_length = len(sequence)
+            
+            frame_analysis = {
+                'sequence_id': seq_record.id,
+                'sequence_length': seq_length,
+                'frames': {}
+            }
+            
+            # Analyze all 6 reading frames (3 forward, 3 reverse)
+            for strand in ['+', '-']:
+                if strand == '+':
+                    seq_to_analyze = sequence
+                else:
+                    try:
+                        seq_to_analyze = str(seq_record.seq.reverse_complement()).upper()
+                    except Exception:
+                        continue  # Skip if reverse complement not supported
+                
+                for frame in range(3):
+                    frame_key = f"{strand}{frame + 1}"
+                    
+                    # Extract codons for this frame
+                    codons = []
+                    amino_acids = []
+                    
+                    for i in range(frame, len(seq_to_analyze) - 2, 3):
+                        codon = seq_to_analyze[i:i+3]
+                        if len(codon) == 3 and all(base in 'ATCG' for base in codon):
+                            codons.append(codon)
+                            # Simple codon to amino acid translation
+                            aa = self._translate_codon(codon)
+                            amino_acids.append(aa)
+                    
+                    # Analyze this reading frame
+                    start_codons = sum(1 for codon in codons if codon == 'ATG')
+                    stop_codons = sum(1 for codon in codons if codon in ['TAA', 'TAG', 'TGA'])
+                    
+                    # Calculate longest ORF in this frame
+                    longest_orf = self._find_longest_orf_in_frame(codons)
+                    
+                    frame_analysis['frames'][frame_key] = {
+                        'total_codons': len(codons),
+                        'start_codons': start_codons,
+                        'stop_codons': stop_codons,
+                        'longest_orf': longest_orf,
+                        'amino_acid_count': len([aa for aa in amino_acids if aa != '*']),
+                        'stop_frequency': stop_codons / len(codons) if codons else 0
+                    }
+            
+            reading_frame_stats.append(frame_analysis)
+        
+        return {
+            'analysis_type': 'reading_frames',
+            'total_sequences': len(sequences),
+            'frame_stats': reading_frame_stats
+        }
+    
+    def _translate_codon(self, codon):
+        """Simple codon to amino acid translation"""
+        codon_table = {
+            'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L',
+            'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S',
+            'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*',
+            'TGT': 'C', 'TGC': 'C', 'TGA': '*', 'TGG': 'W',
+            'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
+            'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
+            'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
+            'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
+            'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'ATG': 'M',
+            'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
+            'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K',
+            'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R',
+            'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
+            'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+            'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
+            'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'
+        }
+        return codon_table.get(codon, 'X')  # X for unknown
+    
+    def _find_longest_orf_in_frame(self, codons):
+        """Find the longest ORF in a list of codons"""
+        longest = 0
+        current_length = 0
+        in_orf = False
+        
+        for codon in codons:
+            if codon == 'ATG':  # Start codon
+                if not in_orf:
+                    in_orf = True
+                    current_length = 3  # Length of start codon
+            elif codon in ['TAA', 'TAG', 'TGA']:  # Stop codons
+                if in_orf:
+                    current_length += 3  # Add stop codon length
+                    longest = max(longest, current_length)
+                    in_orf = False
+                    current_length = 0
+            elif in_orf:
+                current_length += 3
+        
+        return longest
+
     def find_motifs(self, sequences: List, min_length: int = 6, max_length: int = 12) -> Dict[str, Any]:
         """
         Discover conserved motifs in sequences using k-mer analysis

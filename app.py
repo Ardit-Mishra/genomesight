@@ -173,7 +173,7 @@ st.markdown("""
 def main():
     # Main header
     st.markdown('<h1 class="main-header">🧬 Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
-    st.markdown("Upload, analyze, and visualize genomic data with comprehensive statistical analysis and downloadable results.")
+    st.markdown("Upload DNA sequences and instantly analyze **GC content**, **k-mers**, and **reading frames** with comprehensive statistical analysis and downloadable results.")
     
     # Sidebar for file upload and settings
     with st.sidebar:
@@ -218,6 +218,29 @@ def main():
             "Quality Scores (FASTQ only)", 
             value=True,
             help="Analyze Phred quality scores for FASTQ files to assess sequencing quality"
+        )
+        
+        st.markdown("**🧬 K-mer Analysis**")
+        analyze_kmers = st.checkbox(
+            "K-mer Frequency Analysis",
+            value=True,
+            help="Analyze k-mer patterns and frequencies - essential for sequence composition studies"
+        )
+        if analyze_kmers:
+            kmer_size = st.selectbox(
+                "K-mer size",
+                [3, 4, 5, 6, 7, 8],
+                index=0,
+                help="Choose k-mer length: 3 for codons, 4-8 for motif discovery"
+            )
+        else:
+            kmer_size = 3
+        
+        st.markdown("**📖 Reading Frame Analysis**")
+        analyze_reading_frames = st.checkbox(
+            "Reading Frame Analysis",
+            value=True,
+            help="Analyze all 6 reading frames to identify potential coding regions and ORFs"
         )
         
         st.markdown("**🔍 Pattern Search**")
@@ -333,7 +356,7 @@ def main():
                         display_overview(processed_files)
                     
                     with tab2:
-                        display_detailed_analysis(processed_files, analyze_gc_content, analyze_composition, analyze_quality, search_pattern)
+                        display_detailed_analysis(processed_files, analyze_gc_content, analyze_composition, analyze_quality, search_pattern, analyze_kmers, kmer_size, analyze_reading_frames)
                     
                     with tab3:
                         display_visualizations(processed_files, analyze_gc_content, analyze_composition, analyze_quality)
@@ -618,7 +641,7 @@ def display_overview(processed_files):
     st.success(f"✅ Dataset ready for comprehensive analysis with {len(processed_files)} files and {total_sequences:,} sequences")
     st.info("🔬 **Advanced features available**: Use the research analysis tabs for motif discovery, codon analysis, phylogenetic studies, and ORF prediction")
 
-def display_detailed_analysis(processed_files, analyze_gc_content, analyze_composition, analyze_quality, search_pattern):
+def display_detailed_analysis(processed_files, analyze_gc_content, analyze_composition, analyze_quality, search_pattern, analyze_kmers=True, kmer_size=3, analyze_reading_frames=True):
     """Display detailed analysis results"""
     st.markdown('<h2 class="section-header">🔬 Detailed Analysis</h2>', unsafe_allow_html=True)
     
@@ -686,15 +709,118 @@ def display_detailed_analysis(processed_files, analyze_gc_content, analyze_compo
                     qual_df = pd.DataFrame([quality_stats])
                     st.dataframe(qual_df, hide_index=True)
             
+            # K-mer Analysis
+            if analyze_kmers:
+                st.markdown(f"**🧬 K-mer Analysis (k={kmer_size})**")
+                try:
+                    kmer_results = analyzer.analyze_kmers(sequences, k=kmer_size)
+                    
+                    # Display global k-mer statistics
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("Total K-mers", f"{kmer_results['global_stats']['total_kmers']:,}")
+                        st.metric("Unique K-mers", f"{kmer_results['global_stats']['unique_kmers']:,}")
+                    
+                    with col2:
+                        # GC bias in k-mers
+                        gc_bias = kmer_results['global_stats']['gc_bias']
+                        st.metric("GC-rich K-mers", f"{gc_bias['gc_rich_percent']:.1f}%")
+                        st.metric("AT-rich K-mers", f"{gc_bias['at_rich_percent']:.1f}%")
+                    
+                    with col3:
+                        # Most common k-mers
+                        most_common = kmer_results['global_stats']['most_common'][:5]
+                        st.markdown("**Most Common:**")
+                        for kmer, count in most_common:
+                            st.write(f"{kmer}: {count:,}")
+                    
+                    # Show k-mer diversity
+                    if kmer_results['per_sequence']:
+                        avg_diversity = np.mean([seq['diversity'] for seq in kmer_results['per_sequence']])
+                        st.info(f"📊 Average Shannon Diversity: {avg_diversity:.2f}")
+                        
+                        if avg_diversity > 3.0:
+                            st.success("🌟 High k-mer diversity - good sequence complexity")
+                        elif avg_diversity > 2.0:
+                            st.info("📊 Moderate k-mer diversity")
+                        else:
+                            st.warning("⚠️ Low k-mer diversity - check for repeats or bias")
+                    
+                except Exception as e:
+                    st.error(f"K-mer analysis failed: {str(e)}")
+            
+            # Reading Frame Analysis
+            if analyze_reading_frames:
+                st.markdown("**📖 Reading Frame Analysis**")
+                try:
+                    frame_results = analyzer.analyze_reading_frames(sequences)
+                    
+                    # Display reading frame statistics
+                    for frame_data in frame_results['frame_stats']:
+                        if frame_data['sequence_id'] == sequences[0].id:  # Show first sequence as example
+                            st.markdown(f"**Analysis for: {frame_data['sequence_id']}**")
+                            
+                            # Create frame comparison table
+                            frame_table = []
+                            for frame_id, frame_info in frame_data['frames'].items():
+                                frame_table.append({
+                                    'Frame': frame_id,
+                                    'Total Codons': frame_info['total_codons'],
+                                    'Start Codons (ATG)': frame_info['start_codons'],
+                                    'Stop Codons': frame_info['stop_codons'],
+                                    'Longest ORF (bp)': frame_info['longest_orf'],
+                                    'Stop Frequency': f"{frame_info['stop_frequency']:.3f}"
+                                })
+                            
+                            frame_df = pd.DataFrame(frame_table)
+                            st.dataframe(frame_df, use_container_width=True)
+                            
+                            # Find most promising reading frame
+                            best_frame = max(frame_data['frames'].items(), 
+                                           key=lambda x: x[1]['longest_orf'])
+                            st.success(f"🎯 **Best reading frame**: {best_frame[0]} with longest ORF of {best_frame[1]['longest_orf']} bp")
+                            
+                            # Reading frame insights
+                            total_frames = len(frame_data['frames'])
+                            frames_with_orfs = sum(1 for f in frame_data['frames'].values() if f['longest_orf'] > 100)
+                            
+                            if frames_with_orfs > 3:
+                                st.info("🧬 Multiple frames have long ORFs - potentially coding sequence")
+                            elif frames_with_orfs > 0:
+                                st.info("📊 Some reading frames show coding potential")
+                            else:
+                                st.warning("⚠️ No significant ORFs found - may be non-coding sequence")
+                            
+                            break  # Only show first sequence to avoid clutter
+                    
+                    # Summary for all sequences
+                    if len(frame_results['frame_stats']) > 1:
+                        all_longest_orfs = []
+                        for frame_data in frame_results['frame_stats']:
+                            max_orf = max(f['longest_orf'] for f in frame_data['frames'].values())
+                            all_longest_orfs.append(max_orf)
+                        
+                        avg_longest_orf = np.mean(all_longest_orfs)
+                        st.info(f"📈 Average longest ORF across all sequences: {avg_longest_orf:.1f} bp")
+                    
+                except Exception as e:
+                    st.error(f"Reading frame analysis failed: {str(e)}")
+            
             # Pattern search
             if search_pattern:
-                st.markdown(f"**Pattern Search: '{search_pattern}'**")
+                st.markdown(f"**🔍 Pattern Search: '{search_pattern}'**")
                 matches = analyzer.search_pattern(sequences, search_pattern)
                 if matches:
                     match_df = pd.DataFrame(matches)
                     st.dataframe(match_df, hide_index=True)
+                    
+                    # Pattern analysis insights
+                    st.info(f"🎯 Found {len(matches)} matches across {len(set(m['sequence_id'] for m in matches))} sequences")
                 else:
                     st.info(f"Pattern '{search_pattern}' not found in any sequences")
+                    st.markdown("**💡 Try these common patterns:**")
+                    st.write("• ATG (start codon) • TAA, TAG, TGA (stop codons) • TATA (promoter) • CG (methylation sites)")
 
 def display_visualizations(processed_files, analyze_gc_content, analyze_composition, analyze_quality):
     """Display interactive visualizations"""
