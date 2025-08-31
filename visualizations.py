@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
 import streamlit as st
+from collections import Counter
 
 def create_gc_content_plot(gc_contents: List[float], file_labels: List[str]) -> go.Figure:
     """
@@ -519,6 +520,188 @@ def create_comparative_analysis_plot(file_data: Dict[str, Dict]) -> go.Figure:
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#fafafa"),
         showlegend=False
+    )
+    
+    return fig
+
+def create_motif_analysis_plot(motif_data: Dict[str, Any]) -> go.Figure:
+    """
+    Create visualization for motif discovery results
+    """
+    if not motif_data or 'error' in motif_data:
+        return go.Figure()
+    
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('Motif Conservation', 'Frequency Distribution', 'Length Analysis', 'Coverage'),
+        specs=[[{"type": "bar"}, {"type": "scatter"}],
+               [{"type": "bar"}, {"type": "pie"}]]
+    )
+    
+    # Collect all motifs
+    all_motifs = []
+    for k_mer, motifs in motif_data.items():
+        if isinstance(motifs, list):
+            for motif in motifs:
+                motif['length'] = len(motif['motif'])
+                all_motifs.append(motif)
+    
+    if all_motifs:
+        conservations = [m['conservation'] for m in all_motifs[:20]]
+        motif_names = [m['motif'] for m in all_motifs[:20]]
+        
+        fig.add_trace(
+            go.Bar(x=motif_names, y=conservations, name='Conservation',
+                   marker_color='#00d4aa'),
+            row=1, col=1
+        )
+        
+        frequencies = [m['frequency'] for m in all_motifs[:20]]
+        fig.add_trace(
+            go.Scatter(x=frequencies, y=conservations, mode='markers',
+                      marker=dict(size=10, color='#45B7D1'), name='Motifs'),
+            row=1, col=2
+        )
+    
+    fig.update_layout(
+        height=600,
+        title='🧬 Motif Discovery Analysis',
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
+    )
+    
+    return fig
+
+def create_codon_usage_plot(codon_data: Dict[str, Any]) -> go.Figure:
+    """
+    Create codon usage bias visualization
+    """
+    if not codon_data or 'error' in codon_data:
+        return go.Figure()
+    
+    fig = make_subplots(
+        rows=2, cols=2,
+        subplot_titles=('RSCU Values', 'Amino Acid Usage', 'Biased Codons', 'Frequency'),
+        specs=[[{"type": "bar"}, {"type": "bar"}],
+               [{"type": "bar"}, {"type": "scatter"}]]
+    )
+    
+    # RSCU values
+    if 'rscu_values' in codon_data:
+        rscu_items = list(codon_data['rscu_values'].items())[:30]
+        codons = [item[0] for item in rscu_items]
+        rscu_vals = [item[1] for item in rscu_items]
+        
+        colors = ['#FF6B6B' if val > 1.5 else '#4ECDC4' if val < 0.5 else '#45B7D1' for val in rscu_vals]
+        
+        fig.add_trace(
+            go.Bar(x=codons, y=rscu_vals, name='RSCU', marker_color=colors),
+            row=1, col=1
+        )
+    
+    fig.update_layout(
+        height=600,
+        title='🧬 Codon Usage Analysis',
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
+    )
+    
+    return fig
+
+def create_phylogenetic_plot(distance_data: Dict[str, Any]) -> go.Figure:
+    """
+    Create phylogenetic distance visualization
+    """
+    if not distance_data or 'error' in distance_data:
+        return go.Figure()
+    
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('Distance Heatmap', 'Distance Distribution'),
+        specs=[[{"type": "heatmap"}, {"type": "histogram"}]]
+    )
+    
+    # Distance matrix heatmap
+    if 'distance_matrix' in distance_data and 'sequence_names' in distance_data:
+        matrix = np.array(distance_data['distance_matrix'])
+        names = distance_data['sequence_names']
+        
+        fig.add_trace(
+            go.Heatmap(
+                z=matrix,
+                x=names,
+                y=names,
+                colorscale='Viridis',
+                name='Distance Matrix'
+            ),
+            row=1, col=1
+        )
+        
+        # Distance distribution
+        upper_triangle = matrix[np.triu_indices_from(matrix, k=1)]
+        
+        fig.add_trace(
+            go.Histogram(x=upper_triangle, nbinsx=20, name='Distance Distribution',
+                        marker_color='#00d4aa'),
+            row=1, col=2
+        )
+    
+    fig.update_layout(
+        height=500,
+        title='🌳 Phylogenetic Analysis',
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
+    )
+    
+    return fig
+
+def create_orf_analysis_plot(orf_data: Dict[str, Any]) -> go.Figure:
+    """
+    Create ORF prediction visualization
+    """
+    if not orf_data or 'error' in orf_data or not orf_data.get('orfs'):
+        return go.Figure()
+    
+    orfs = orf_data['orfs']
+    
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('ORF Length Distribution', 'Reading Frame Distribution'),
+        specs=[[{"type": "histogram"}, {"type": "bar"}]]
+    )
+    
+    # ORF length distribution
+    lengths = [orf['length'] for orf in orfs]
+    fig.add_trace(
+        go.Histogram(x=lengths, nbinsx=20, name='ORF Lengths',
+                    marker_color='#00d4aa'),
+        row=1, col=1
+    )
+    
+    # ORFs by reading frame
+    frame_counts = Counter([orf['frame'] for orf in orfs])
+    frames = list(frame_counts.keys())
+    counts = list(frame_counts.values())
+    
+    fig.add_trace(
+        go.Bar(x=frames, y=counts, name='Frame Distribution',
+               marker_color='#45B7D1'),
+        row=1, col=2
+    )
+    
+    fig.update_layout(
+        height=400,
+        title='🧬 ORF Prediction Analysis',
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#fafafa")
     )
     
     return fig
