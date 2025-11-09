@@ -213,6 +213,17 @@ st.markdown("""
     .nucleotide-t { color: #FFC252; }
     .nucleotide-c { color: #00C9A7; }
     .nucleotide-g { color: #4D96FF; }
+    
+    /* Metric Cards */
+    .metric-card {
+        background: #25293C;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #373B4D;
+        margin: 1rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -221,25 +232,84 @@ def main():
     st.markdown('<h1 class="main-header">Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Analyze DNA sequences for GC content, k-mers, and reading frames</p>', unsafe_allow_html=True)
     
+    # Quick stats badges
+    st.markdown("""
+    <div style="display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0; flex-wrap: wrap;">
+        <div style="text-align: center;">
+            <div style="color: #00C9A7; font-size: 1.5rem; font-weight: 600;">10+</div>
+            <div style="color: #9CA3AF; font-size: 0.85rem;">Analysis Types</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="color: #00C9A7; font-size: 1.5rem; font-weight: 600;">2</div>
+            <div style="color: #9CA3AF; font-size: 0.85rem;">File Formats</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="color: #00C9A7; font-size: 1.5rem; font-weight: 600;">⚡</div>
+            <div style="color: #9CA3AF; font-size: 0.85rem;">Instant Results</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # File upload - always in main area
     st.markdown("---")
     
     # Upload section with prominent styling
     st.markdown("""
-    <div style="background: #25293C; border: 2px dashed #00C9A7; border-radius: 12px; padding: 2.5rem; text-align: center; margin: 1.5rem 0;">
-        <h3 style="color: #00C9A7; margin: 0 0 0.5rem 0; font-size: 1.5rem;">📁 Upload Your Sequence Files</h3>
+    <div style="background: linear-gradient(135deg, #25293C 0%, #1E2330 100%); 
+                border: 2px dashed #00C9A7; 
+                border-radius: 12px; 
+                padding: 2.5rem; 
+                text-align: center; 
+                margin: 1.5rem 0;
+                box-shadow: 0 4px 6px rgba(0, 201, 167, 0.1);">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🧬</div>
+        <h3 style="color: #00C9A7; margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 600;">Upload Your Sequence Files</h3>
         <p style="color: #9CA3AF; margin: 0 0 1.5rem 0; font-size: 1rem;">Drag and drop files here or click below to browse</p>
         <p style="color: #E8EAED; font-size: 0.9rem; margin: 0;">Supported: FASTA (.fasta, .fa) • FASTQ (.fastq, .fq)</p>
     </div>
     """, unsafe_allow_html=True)
     
-    uploaded_files = st.file_uploader(
-        "Choose files",
-        type=['fasta', 'fa', 'fastq', 'fq'],
-        accept_multiple_files=True,
-        key="file_uploader",
-        label_visibility="collapsed"
-    )
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        uploaded_files = st.file_uploader(
+            "Choose files",
+            type=['fasta', 'fa', 'fastq', 'fq'],
+            accept_multiple_files=True,
+            key="file_uploader",
+            label_visibility="collapsed"
+        )
+    with col2:
+        if st.button("Try Sample File", type="secondary", use_container_width=True):
+            st.session_state['use_sample'] = True
+    
+    # Handle sample file
+    if 'use_sample' in st.session_state and st.session_state['use_sample'] and not uploaded_files:
+        # Create sample FASTA content
+        sample_content = """>Sample_Sequence_1
+ATGCGATCGATCGATCGATCGTAGCTAGCTAGCTAGCTAGCTGCATGCATGCATGCATGC
+GCTAGCTAGCTAGCTAGCTAGCGATCGATCGATCGATCGATGCATGCATGCATGCATGCA
+TAGCTAGCTAGCTAGCTAGCTGCTAGCTAGCTAGCTAGCTAGCGATCGATCGATCGATCG
+>Sample_Sequence_2
+TTAACCGGTTAACCGGTTAACCGGTTAACCGGAATTCCGGAATTCCGGAATTCCGGAATT
+CCGGAATTCCGGAATTCCGGAATTCCGGAATTCCTTAACCGGTTAACCGGTTAACCGGTT
+"""
+        # Create a simple wrapper that mimics UploadedFile interface
+        class SampleFile:
+            def __init__(self, content, name):
+                self._content = content.encode()
+                self.name = name
+            
+            def read(self):
+                return self._content
+            
+            def getvalue(self):
+                return self._content
+            
+            def seek(self, position):
+                pass
+        
+        uploaded_files = [SampleFile(sample_content, "sample_sequences.fasta")]
+        st.info("📋 Using sample file for demonstration")
     
     if not uploaded_files:
         # Information tabs
@@ -277,6 +347,21 @@ def main():
                 - **Export Ready** - Download results in various formats
                 - **No Installation** - Web-based tool, works anywhere
                 """)
+            
+            st.markdown("---")
+            st.markdown("### What You'll Get")
+            st.markdown("""
+            <div style="background: #25293C; border-left: 4px solid #00C9A7; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                <h4 style="color: #00C9A7; margin-top: 0;">Example Analysis Results</h4>
+                <p style="color: #9CA3AF; margin-bottom: 1rem;">After uploading your files, you'll receive:</p>
+                <ul style="color: #E8EAED;">
+                    <li><strong>Interactive Charts</strong> - GC content distribution, nucleotide composition, k-mer frequency heatmaps</li>
+                    <li><strong>Statistical Summary</strong> - Sequence length, average quality scores, composition metrics</li>
+                    <li><strong>Reading Frame Analysis</strong> - Six-frame translations with ORF detection</li>
+                    <li><strong>Downloadable Reports</strong> - Export data in JSON, CSV, or FASTA formats</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
         
         with tab2:
             st.markdown("### Core Analyses")
@@ -449,6 +534,15 @@ def main():
                 - Computational biology
                 - Thesis work
                 """)
+        
+        # Footer
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center; padding: 2rem 0 1rem 0; color: #9CA3AF; font-size: 0.85rem;">
+            <p style="margin: 0.5rem 0;">Genome Sequencing Analyzer v1.0 • Built with Streamlit & Biopython</p>
+            <p style="margin: 0.5rem 0; color: #6B7280;">Professional bioinformatics analysis for research, clinical, and educational use</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         return
     
