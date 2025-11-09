@@ -20,17 +20,20 @@ The application features a professional dark theme optimized for extended analys
 - **DNA Base Colors**: A=#FF6B9D (pink), T=#FFC252 (amber), C=#00C9A7 (teal), G=#4D96FF (blue)
 
 ### Visual Style
-- **Information-Rich Cards**: Dark backgrounds with comprehensive feature descriptions
+- **Information-Rich Cards**: Dark backgrounds with comprehensive feature descriptions and subtle shadows
 - **Clear Typography**: Light text on dark backgrounds for comfortable reading
-- **Prominent Upload**: File upload positioned in main content area for easy access
+- **Prominent Upload**: Enhanced upload area with gradient background, DNA icon, and box shadow
 - **Tabbed Information**: Four organized tabs (Overview, Features & Capabilities, File Formats, Use Cases)
 - **Feature Showcase**: Detailed explanations of analysis capabilities organized logically
+- **Stats Badges**: Quick metrics display showing 10+ analysis types, 2 file formats, instant results
+- **Professional Footer**: Version info and credits with dark theme styling
 
 ### Design Principles
 - **Informative**: Clear descriptions of what each analysis does and why it's useful
-- **Professional**: Classic scientific dark theme suitable for research environments
-- **User-Centric**: File upload prominently placed; sidebar for analysis options
-- **Educational**: Includes use cases (research, clinical, education) to help users understand applications
+- **Professional**: Classic scientific dark theme suitable for research environments with subtle visual polish
+- **User-Centric**: File upload prominently placed with "Try Sample File" feature; sidebar for analysis options
+- **Educational**: Includes use cases (research, clinical, education) and example output preview to help users understand applications
+- **Subtle Enhancement**: Gradient backgrounds, soft shadows, and refined spacing without being flashy
 
 # System Architecture
 
