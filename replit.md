@@ -6,6 +6,31 @@ The Genome Sequencing Analyzer is a bioinformatics web application built with St
 
 Preferred communication style: Simple, everyday language.
 
+# UI/UX Design System
+
+## Neural Bio-Futurism Theme (Updated November 2025)
+The application features a distinctive Neural Bio-Futurism design aesthetic that fuses AI minimalism with biological elegance. This research-grade interface is optimized for extended analysis sessions while maintaining visual sophistication.
+
+### Color Palette
+- **Background**: Charcoal Black (#0B0E13) - Deep, neutral base for reduced eye strain
+- **Surfaces**: Gunmetal (rgba(22, 27, 34, 0.7)) - Semi-transparent panels with glass-morphism
+- **Primary Gradient**: Cyan-Teal (linear-gradient(90deg, #00D8B4, #38BDF8)) - Main accent for interactive elements
+- **Typography**: Light Gray (#E2E8F0) for primary text, Slate (#94A3B8) for secondary text
+- **Accent**: Magenta-Violet (#C084FC) - Reserved for special highlights and alerts
+- **DNA Base Colors**: A=#FF6B6B (red), T=#FFD93D (yellow), C=#6BCB77 (green), G=#4D96FF (blue)
+
+### Visual Effects
+- **Glass-morphism**: Semi-transparent surfaces with backdrop-filter blur effects for depth and hierarchy
+- **Bioluminescent Glow**: Subtle box-shadow effects using cyan-teal colors on interactive elements
+- **Gradient Animations**: Smooth color transitions and hover states for enhanced interactivity
+- **Card Elevation**: Multi-layer shadows creating depth and visual separation between content sections
+
+### Design Principles
+- **Research-Grade**: Professional interface suitable for academic and clinical use
+- **Accessibility**: WCAG-compliant contrast ratios ensuring readability
+- **Consistent Theming**: Unified color language throughout all UI components
+- **Performance**: CSS-based animations for smooth 60fps interactions
+
 # System Architecture
 
 ## Frontend Architecture
