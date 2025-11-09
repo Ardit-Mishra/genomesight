@@ -8,28 +8,28 @@ Preferred communication style: Simple, everyday language.
 
 # UI/UX Design System
 
-## Clean Simple Theme (Updated November 2025)
-The application features a clean, simple design aesthetic that prioritizes readability and ease of use. The straightforward interface is professional and accessible for all users.
+## Classic Scientific Dark Theme (Updated November 2025)
+The application features a professional dark theme optimized for extended analysis sessions. The design emphasizes clarity and functionality while providing comprehensive feature information.
 
 ### Color Palette
-- **Background**: White (#FFFFFF) - Clean, bright base
-- **Surfaces**: Light Gray (#F8F9FA) - Subtle card backgrounds
-- **Primary Accent**: Blue (#3498DB) - Simple, professional accent color
-- **Typography**: Dark Gray (#2C3E50) for primary text, Medium Gray (#7F8C8D) for secondary text
-- **Borders**: Light Gray (#E0E0E0) - Subtle borders for separation
-- **DNA Base Colors**: A=#E74C3C (red), T=#F39C12 (orange), C=#27AE60 (green), G=#3498DB (blue)
+- **Background**: Dark Blue-Gray (#1A1D29) - Reduces eye strain during long sessions
+- **Surfaces**: Charcoal (#25293C) - Distinct card backgrounds
+- **Primary Accent**: Teal (#00C9A7) - Professional scientific accent
+- **Typography**: Light Gray (#E8EAED) for primary text, Medium Gray (#9CA3AF) for secondary text
+- **Borders**: Subtle Gray (#373B4D) - Minimal separation
+- **DNA Base Colors**: A=#FF6B9D (pink), T=#FFC252 (amber), C=#00C9A7 (teal), G=#4D96FF (blue)
 
 ### Visual Style
-- **Simple Cards**: White backgrounds with light gray borders and minimal shadows
-- **Clean Typography**: Dark text on light backgrounds for optimal readability
-- **Straightforward Buttons**: Solid blue buttons with simple hover states
-- **Minimal Effects**: No gradients, glows, or complex visual effects
+- **Information-Rich Cards**: Dark backgrounds with comprehensive feature descriptions
+- **Clear Typography**: Light text on dark backgrounds for comfortable reading
+- **Prominent Upload**: File upload positioned in main content area for easy access
+- **Feature Showcase**: Detailed explanations of analysis capabilities
 
 ### Design Principles
-- **Simplicity**: Clean, straightforward interface without unnecessary decorations
-- **Readability**: High contrast between text and backgrounds
-- **Professionalism**: Suitable for scientific and research use
-- **Accessibility**: WCAG-compliant design for all users
+- **Informative**: Clear descriptions of what each analysis does and why it's useful
+- **Professional**: Classic scientific dark theme suitable for research environments
+- **User-Centric**: File upload prominently placed; sidebar for analysis options
+- **Educational**: Includes use cases (research, clinical, education) to help users understand applications
 
 # System Architecture
 

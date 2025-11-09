@@ -22,305 +22,363 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Clean Simple Theme - Custom CSS
+# Classic Scientific Dark Theme - Custom CSS
 st.markdown("""
 <style>
-    /* Global Base Styles - Clean Light Background */
+    /* Global Base */
     .stApp {
-        background-color: #FFFFFF;
-        color: #2C3E50;
+        background-color: #1A1D29;
+        color: #E8EAED;
     }
     
-    /* Main Header - Simple and Clean */
+    /* Main Header */
     .main-header {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 600;
-        color: #2C3E50;
-        text-align: center;
-        margin: 2rem 0 1rem 0;
-        padding: 1rem;
-        border-bottom: 3px solid #3498DB;
+        color: #FFFFFF;
+        margin: 0 0 0.5rem 0;
+        padding: 0;
+        letter-spacing: -0.5px;
     }
     
-    /* Section Headers - Simple Underline */
+    .subtitle {
+        font-size: 1rem;
+        color: #9CA3AF;
+        margin: 0 0 2rem 0;
+        font-weight: 400;
+    }
+    
+    /* Section Headers */
     .section-header {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 600;
-        color: #34495E;
+        color: #FFFFFF;
         margin: 2rem 0 1rem 0;
         padding-bottom: 0.5rem;
-        border-bottom: 2px solid #E0E0E0;
+        border-bottom: 1px solid #373B4D;
     }
     
-    /* Cards - Simple White Cards with Border */
+    /* Upload Zone - Prominent */
+    .upload-zone {
+        background: #25293C;
+        border: 2px dashed #00C9A7;
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        margin: 2rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-zone:hover {
+        border-color: #00FFD1;
+        background: #2A2E42;
+    }
+    
+    .stFileUploader {
+        background: transparent !important;
+    }
+    
+    .stFileUploader > div {
+        border: none !important;
+        padding: 0 !important;
+    }
+    
+    /* Cards */
     .metric-card {
-        background: #FFFFFF !important;
+        background: #25293C !important;
         padding: 1.5rem !important;
         border-radius: 8px !important;
-        border: 1px solid #E0E0E0 !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid #373B4D !important;
         margin-bottom: 1rem;
     }
     
-    .metric-card:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    }
-    
-    /* Streamlit Metrics - Clean Style */
     div[data-testid="stMetric"], div[data-testid="metric-container"] {
-        background: #F8F9FA !important;
+        background: #25293C !important;
         border-radius: 8px !important;
-        border: 1px solid #E0E0E0 !important;
+        border: 1px solid #373B4D !important;
         padding: 1rem !important;
     }
     
-    /* File Uploader - Simple Border */
-    .stFileUploader > div > div > div {
-        background: #F8F9FA;
-        border: 2px dashed #3498DB;
-        border-radius: 8px;
-        padding: 2rem;
-    }
-    
-    .stFileUploader > div > div > div:hover {
-        border-color: #2980B9;
-        background: #EBF5FB;
-    }
-    
-    /* Buttons - Simple Blue */
-    .stButton > button, button[kind="primary"], button[kind="secondary"] {
-        background: #3498DB !important;
-        color: white !important;
+    /* Buttons */
+    .stButton > button, button[kind="primary"] {
+        background: #00C9A7 !important;
+        color: #1A1D29 !important;
         border: none !important;
         border-radius: 6px !important;
-        padding: 0.5rem 1.5rem !important;
-        font-weight: 500 !important;
+        padding: 0.625rem 1.5rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
     }
     
-    .stButton > button:hover, button[kind="primary"]:hover, button[kind="secondary"]:hover {
-        background: #2980B9 !important;
+    .stButton > button:hover, button[kind="primary"]:hover {
+        background: #00FFD1 !important;
+        transform: translateY(-1px) !important;
     }
     
-    /* Sidebar - Simple Light Gray */
-    section[data-testid="stSidebar"], [data-testid="stSidebar"] > div {
-        background: #F8F9FA !important;
-        border-right: 1px solid #E0E0E0 !important;
+    button[kind="secondary"] {
+        background: transparent !important;
+        color: #E8EAED !important;
+        border: 1px solid #373B4D !important;
     }
     
-    /* Tabs - Simple Style */
+    button[kind="secondary"]:hover {
+        border-color: #00C9A7 !important;
+        background: #25293C !important;
+    }
+    
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background: #1F2230 !important;
+        border-right: 1px solid #373B4D !important;
+    }
+    
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0.5rem;
-        border-bottom: 2px solid #E0E0E0;
+        gap: 0;
+        border-bottom: 1px solid #373B4D;
+        background: transparent;
     }
     
     .stTabs [data-baseweb="tab"] {
         background: transparent;
         border: none;
-        border-bottom: 3px solid transparent;
+        border-bottom: 2px solid transparent;
         padding: 0.75rem 1.5rem;
-        color: #7F8C8D;
+        color: #9CA3AF;
         font-weight: 500;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        color: #2C3E50;
-        border-bottom-color: #BDC3C7;
+        color: #E8EAED;
+        background: #25293C;
     }
     
     .stTabs [aria-selected="true"] {
-        color: #3498DB;
-        border-bottom-color: #3498DB;
+        color: #00C9A7;
+        border-bottom-color: #00C9A7;
+        background: #25293C;
     }
     
-    /* Progress Bar - Simple Blue */
+    /* Progress Bar */
     .stProgress > div > div > div {
-        background: #3498DB;
+        background: #00C9A7 !important;
     }
     
-    /* Expanders - Simple */
+    /* Expanders */
     .stExpander {
-        background: #FFFFFF;
-        border: 1px solid #E0E0E0;
+        background: #25293C;
+        border: 1px solid #373B4D;
         border-radius: 8px;
         margin: 1rem 0;
     }
     
-    /* Data Frames - Clean */
-    .stDataFrame {
-        border: 1px solid #E0E0E0;
-        border-radius: 8px;
-    }
-    
-    /* Inputs - Simple */
-    .stSelectbox > div > div, .stTextInput > div > div > input {
-        border: 1px solid #D0D0D0;
-        border-radius: 6px;
+    /* Inputs */
+    .stSelectbox > div > div, .stTextInput > div > div > input, .stNumberInput > div > div > input {
+        background: #25293C !important;
+        border: 1px solid #373B4D !important;
+        border-radius: 6px !important;
+        color: #E8EAED !important;
     }
     
     .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {
-        border-color: #3498DB;
+        border-color: #00C9A7 !important;
     }
     
-    /* Simple Scrollbar */
+    /* Checkboxes */
+    .stCheckbox {
+        color: #E8EAED !important;
+    }
+    
+    /* Scrollbar */
     ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
     }
     
     ::-webkit-scrollbar-track {
-        background: #F0F0F0;
+        background: #1A1D29;
     }
     
     ::-webkit-scrollbar-thumb {
-        background: #BDC3C7;
-        border-radius: 5px;
+        background: #373B4D;
+        border-radius: 4px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background: #95A5A6;
+        background: #4A4E63;
     }
     
-    /* DNA Nucleotide Colors */
-    .nucleotide-a { color: #E74C3C; }
-    .nucleotide-t { color: #F39C12; }
-    .nucleotide-c { color: #27AE60; }
-    .nucleotide-g { color: #3498DB; }
+    /* DNA Colors */
+    .nucleotide-a { color: #FF6B9D; }
+    .nucleotide-t { color: #FFC252; }
+    .nucleotide-c { color: #00C9A7; }
+    .nucleotide-g { color: #4D96FF; }
 </style>
 """, unsafe_allow_html=True)
 
 def main():
     # Main header
-    st.markdown('<h1 class="main-header">🧬 Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
-    st.markdown("Upload DNA sequences and instantly analyze **GC content**, **k-mers**, and **reading frames** with comprehensive statistical analysis and downloadable results.")
+    st.markdown('<h1 class="main-header">Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Analyze DNA sequences for GC content, k-mers, and reading frames</p>', unsafe_allow_html=True)
     
-    # Sidebar for file upload and settings
+    # File upload - always in main area
+    st.markdown("---")
+    
+    # Upload section with prominent styling
+    st.markdown("""
+    <div style="background: #25293C; border: 2px dashed #00C9A7; border-radius: 12px; padding: 2.5rem; text-align: center; margin: 1.5rem 0;">
+        <h3 style="color: #00C9A7; margin: 0 0 0.5rem 0; font-size: 1.5rem;">📁 Upload Your Sequence Files</h3>
+        <p style="color: #9CA3AF; margin: 0 0 1.5rem 0; font-size: 1rem;">Drag and drop files here or click below to browse</p>
+        <p style="color: #E8EAED; font-size: 0.9rem; margin: 0;">Supported: FASTA (.fasta, .fa) • FASTQ (.fastq, .fq)</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    uploaded_files = st.file_uploader(
+        "Choose files",
+        type=['fasta', 'fa', 'fastq', 'fq'],
+        accept_multiple_files=True,
+        key="file_uploader",
+        label_visibility="collapsed"
+    )
+    
+    if not uploaded_files:
+        # Features overview
+        st.markdown("---")
+        st.markdown("### What You Can Analyze")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div class="metric-card">
+                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🧬 GC Content Analysis</h4>
+                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                Calculate GC percentage for genome characterization. Essential for:
+                </p>
+                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                    <li>Species identification</li>
+                    <li>Phylogenetic analysis</li>
+                    <li>PCR primer design</li>
+                    <li>Thermal stability prediction</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div class="metric-card">
+                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🔬 K-mer Frequency</h4>
+                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                Analyze k-mer patterns (3-8 nucleotides) for:
+                </p>
+                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                    <li>Sequence composition analysis</li>
+                    <li>Motif discovery</li>
+                    <li>Codon usage patterns</li>
+                    <li>Repeat identification</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div class="metric-card">
+                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">📖 Reading Frames</h4>
+                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                Six-frame translation analysis to identify:
+                </p>
+                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                    <li>Open reading frames (ORFs)</li>
+                    <li>Potential coding regions</li>
+                    <li>Start/stop codons</li>
+                    <li>Protein translations</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Additional features
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Additional Analyses")
+            st.markdown("""
+            - **Nucleotide Composition** - A, T, C, G distribution with interactive charts
+            - **Quality Scores** - Phred score analysis for FASTQ files  
+            - **Pattern Search** - Find specific DNA motifs and sequences
+            - **Batch Processing** - Analyze multiple files simultaneously
+            - **Statistical Reports** - Comprehensive metrics and summaries
+            """)
+        
+        with col2:
+            st.markdown("#### Supported File Formats")
+            st.markdown("""
+            **FASTA (.fasta, .fa)**
+            - Standard sequence format
+            - DNA, RNA, or protein sequences
+            - Header line starts with `>`
+            
+            **FASTQ (.fastq, .fq)**  
+            - Sequencing data with quality scores
+            - Phred quality metrics included
+            - Commonly from Illumina, PacBio, etc.
+            """)
+        
+        # Example use cases
+        st.markdown("---")
+        st.markdown("### Example Use Cases")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("""
+            **🔬 Research**
+            - Genome assembly validation
+            - Gene prediction preprocessing
+            - Comparative genomics studies
+            - Metagenomics analysis
+            """)
+        
+        with col2:
+            st.markdown("""
+            **🏥 Clinical**
+            - Pathogen identification
+            - Variant calling prep
+            - Quality control checks
+            - Contamination detection
+            """)
+        
+        with col3:
+            st.markdown("""
+            **📚 Education**
+            - Teaching bioinformatics
+            - Sequence analysis labs
+            - Demonstrating concepts
+            - Student projects
+            """)
+        
+        return
+    
+    st.success(f"✓ Loaded {len(uploaded_files)} file(s)")
+    
+    # Analysis options in sidebar
     with st.sidebar:
-        st.markdown('<h2 class="section-header">📁 File Upload</h2>', unsafe_allow_html=True)
+        st.markdown("### Analysis Options")
         
-        # Interactive file upload guidance
-        st.info("💡 **Tip**: Drag and drop your files or click to browse")
+        analyze_gc_content = st.checkbox("GC Content", value=True)
+        analyze_composition = st.checkbox("Nucleotide Composition", value=True)
+        analyze_quality = st.checkbox("Quality Scores", value=True)
         
-        # File uploader with enhanced help
-        uploaded_files = st.file_uploader(
-            "Choose genome sequence files",
-            type=['fasta', 'fa', 'fastq', 'fq'],
-            accept_multiple_files=True,
-            help="📋 **Supported formats:**\n• FASTA (.fasta, .fa)\n• FASTQ (.fastq, .fq)\n\n🔢 **Multiple files:** Upload up to 50 files at once for batch analysis"
-        )
+        st.markdown("---")
+        st.markdown("### K-mer Analysis")
+        analyze_kmers = st.checkbox("Enable K-mer Analysis", value=True)
+        kmer_size = st.selectbox("K-mer size", [3, 4, 5, 6, 7, 8], index=0) if analyze_kmers else 3
         
-        # File upload status
-        if uploaded_files:
-            st.success(f"✅ {len(uploaded_files)} file(s) uploaded successfully!")
-            with st.expander("📋 Uploaded Files", expanded=False):
-                for file in uploaded_files:
-                    file_size = len(file.getvalue()) / 1024  # KB
-                    st.write(f"📄 **{file.name}** ({file_size:.1f} KB)")
-        else:
-            st.warning("⏳ No files uploaded yet")
+        st.markdown("---")
+        st.markdown("### Reading Frames")
+        analyze_reading_frames = st.checkbox("Analyze Reading Frames", value=True)
         
-        # Analysis options
-        st.markdown('<h3 class="section-header">⚙️ Analysis Options</h3>', unsafe_allow_html=True)
-        
-        st.markdown("**🔬 Core Analysis**")
-        analyze_gc_content = st.checkbox(
-            "GC Content Analysis", 
-            value=True,
-            help="Calculate GC content percentage for each sequence - important for genome characterization"
-        )
-        analyze_composition = st.checkbox(
-            "Nucleotide Composition", 
-            value=True,
-            help="Count and visualize A, T, C, G, N nucleotides in your sequences"
-        )
-        analyze_quality = st.checkbox(
-            "Quality Scores (FASTQ only)", 
-            value=True,
-            help="Analyze Phred quality scores for FASTQ files to assess sequencing quality"
-        )
-        
-        st.markdown("**🧬 K-mer Analysis**")
-        analyze_kmers = st.checkbox(
-            "K-mer Frequency Analysis",
-            value=True,
-            help="Analyze k-mer patterns and frequencies - essential for sequence composition studies"
-        )
-        if analyze_kmers:
-            kmer_size = st.selectbox(
-                "K-mer size",
-                [3, 4, 5, 6, 7, 8],
-                index=0,
-                help="Choose k-mer length: 3 for codons, 4-8 for motif discovery"
-            )
-        else:
-            kmer_size = 3
-        
-        st.markdown("**📖 Reading Frame Analysis**")
-        analyze_reading_frames = st.checkbox(
-            "Reading Frame Analysis",
-            value=True,
-            help="Analyze all 6 reading frames to identify potential coding regions and ORFs"
-        )
-        
-        st.markdown("**🔍 Pattern Search**")
-        search_pattern = st.text_input(
-            "Search DNA Pattern", 
-            placeholder="e.g., ATCG, TATA, or any sequence",
-            help="Search for specific DNA sequences or motifs across all uploaded files"
-        )
-        
-        if search_pattern:
-            st.info(f"🔍 Will search for pattern: **{search_pattern.upper()}**")
-        
-        # Advanced options
-        st.markdown("**⚡ Processing Options**")
-        batch_size = st.selectbox(
-            "Batch Processing Size", 
-            [10, 50, 100, 500], 
-            index=1,
-            help="Number of sequences to process at once - larger batches are faster but use more memory"
-        )
-        
-        # Real-time parameter updates
-        current_params = {
-            'gc_content': analyze_gc_content,
-            'composition': analyze_composition,
-            'quality': analyze_quality,
-            'pattern': search_pattern,
-            'batch_size': batch_size
-        }
-        
-        # Check if parameters changed
-        params_changed = current_params != st.session_state.get('analysis_params', {})
-        if params_changed:
-            st.session_state.analysis_params = current_params
-        
-        # Advanced filtering options
-        st.markdown("**🔬 Advanced Filters**")
-        with st.expander("Filter Options", expanded=False):
-            min_length = st.number_input("Minimum sequence length", min_value=1, value=1, help="Filter out sequences shorter than this length")
-            max_length = st.number_input("Maximum sequence length", min_value=1, value=100000, help="Filter out sequences longer than this length")
-            gc_range = st.slider("GC Content Range (%)", 0.0, 100.0, (0.0, 100.0), help="Only analyze sequences within this GC content range")
-        
-        # Real-time search with debouncing
-        if search_pattern:
-            st.markdown(f"🔍 **Live Pattern Search**: *{search_pattern.upper()}*")
-            if len(search_pattern) >= 3:
-                st.info(f"✓ Pattern is valid for search ({len(search_pattern)} nucleotides)")
-            else:
-                st.warning("⚠️ Pattern should be at least 3 nucleotides for reliable results")
-        
-        # Analysis button with enhanced feedback
-        if uploaded_files:
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
-                    st.balloons()
-                    st.success("🎉 Analysis started! Check the tabs below for results.")
-            with col2:
-                if st.button("🔄 Reset Analysis", use_container_width=True):
-                    st.session_state.analysis_results = {}
-                    st.session_state.processed_files_cache = {}
-                    st.success("Analysis cache cleared!")
+        st.markdown("---")
+        search_pattern = st.text_input("Search Pattern", placeholder="e.g., ATCG")
         
     # Main content area
     if uploaded_files:
@@ -338,36 +396,24 @@ def main():
             progress_bar = st.progress(0)
             status_text = st.empty()
             
-        with st.spinner("🔬 Processing uploaded files..."):
-            status_text.text("📁 Reading and validating files...")
+        with st.spinner("Processing files..."):
+            status_text.text("Reading files...")
             progress_bar.progress(25)
             try:
                 processed_files = parse_uploaded_files(uploaded_files)
                 
                 if processed_files:
                     progress_bar.progress(100)
-                    status_text.text("✅ Processing complete!")
-                    st.success(f"🎉 Successfully loaded {len(processed_files)} files with {sum(len(data['sequences']) for data in processed_files.values())} total sequences")
+                    status_text.text("Complete")
+                    st.success(f"Processed {len(processed_files)} files with {sum(len(data['sequences']) for data in processed_files.values())} sequences")
                     
-                    # Data quality validation
-                    for filename, data in processed_files.items():
-                        validation = validate_sequence_data(data['sequences'])
-                        if validation['warnings']:
-                            with st.expander(f"⚠️ Quality Check: {filename}", expanded=False):
-                                for warning in validation['warnings']:
-                                    st.warning(warning)
-                                for rec in validation['recommendations']:
-                                    st.info(rec)
-                                st.metric("Data Quality Score", f"{validation['quality_score']}/100")
-                        else:
-                            st.success(f"✅ {filename}: High quality data (100/100)")
                     
-                    # Create tabs for different views with enhanced descriptions
+                    # Create tabs
                     tab1, tab2, tab3, tab4 = st.tabs([
-                        "📊 Overview", 
-                        "🔬 Detailed Analysis", 
-                        "📈 Interactive Charts", 
-                        "📥 Export & Share"
+                        "Overview", 
+                        "Analysis", 
+                        "Charts", 
+                        "Export"
                     ])
                     
                     with tab1:
@@ -389,11 +435,7 @@ def main():
                 st.error(f"Error processing files: {str(e)}")
                 st.info("Please ensure your files are in valid FASTA or FASTQ format.")
     
-    else:
-        # Welcome screen
-        display_welcome_screen()
-
-def display_welcome_screen():
+def display_welcome_screen_legacy():
     """Display welcome screen with instructions"""
     st.markdown('<h1 class="main-header">Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
     
