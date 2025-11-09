@@ -242,66 +242,96 @@ def main():
     )
     
     if not uploaded_files:
-        # Features overview
+        # Information tabs
         st.markdown("---")
-        st.markdown("### What You Can Analyze")
         
-        col1, col2, col3 = st.columns(3)
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Overview", "🔬 Features & Capabilities", "📁 File Formats", "💡 Use Cases"])
         
-        with col1:
+        with tab1:
+            st.markdown("### About This Tool")
             st.markdown("""
-            <div class="metric-card">
-                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🧬 GC Content Analysis</h4>
-                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
-                Calculate GC percentage for genome characterization. Essential for:
-                </p>
-                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
-                    <li>Species identification</li>
-                    <li>Phylogenetic analysis</li>
-                    <li>PCR primer design</li>
-                    <li>Thermal stability prediction</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
+            The Genome Sequencing Analyzer is a comprehensive bioinformatics tool for analyzing DNA sequence data. 
+            Upload your FASTA or FASTQ files to perform various analyses including composition, quality metrics, 
+            and pattern recognition.
+            """)
+            
+            st.markdown("### Quick Start")
             st.markdown("""
-            <div class="metric-card">
-                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🔬 K-mer Frequency</h4>
-                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
-                Analyze k-mer patterns (3-8 nucleotides) for:
-                </p>
-                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
-                    <li>Sequence composition analysis</li>
-                    <li>Motif discovery</li>
-                    <li>Codon usage patterns</li>
-                    <li>Repeat identification</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
+            1. **Upload** your sequence files using the upload area above
+            2. **Select** the analyses you want to perform from the sidebar
+            3. **View** interactive visualizations and detailed results
+            4. **Export** your analysis reports for further use
+            """)
+            
+            st.markdown("### Key Benefits")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("""
+                - **Fast Processing** - Analyze sequences in seconds
+                - **Interactive Visualizations** - Explore data with dynamic charts
+                - **Batch Analysis** - Process multiple files simultaneously
+                """)
+            with col2:
+                st.markdown("""
+                - **Comprehensive Metrics** - GC content, k-mers, quality scores
+                - **Export Ready** - Download results in various formats
+                - **No Installation** - Web-based tool, works anywhere
+                """)
         
-        with col3:
-            st.markdown("""
-            <div class="metric-card">
-                <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">📖 Reading Frames</h4>
-                <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
-                Six-frame translation analysis to identify:
-                </p>
-                <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
-                    <li>Open reading frames (ORFs)</li>
-                    <li>Potential coding regions</li>
-                    <li>Start/stop codons</li>
-                    <li>Protein translations</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Additional features
-        st.markdown("---")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("#### Additional Analyses")
+        with tab2:
+            st.markdown("### Core Analyses")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("""
+                <div class="metric-card">
+                    <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🧬 GC Content Analysis</h4>
+                    <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                    Calculate GC percentage for genome characterization. Essential for:
+                    </p>
+                    <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                        <li>Species identification</li>
+                        <li>Phylogenetic analysis</li>
+                        <li>PCR primer design</li>
+                        <li>Thermal stability prediction</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("""
+                <div class="metric-card">
+                    <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">🔬 K-mer Frequency</h4>
+                    <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                    Analyze k-mer patterns (3-8 nucleotides) for:
+                    </p>
+                    <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                        <li>Sequence composition analysis</li>
+                        <li>Motif discovery</li>
+                        <li>Codon usage patterns</li>
+                        <li>Repeat identification</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("""
+                <div class="metric-card">
+                    <h4 style="color: #00C9A7; margin-bottom: 0.75rem;">📖 Reading Frames</h4>
+                    <p style="color: #9CA3AF; font-size: 0.9rem; line-height: 1.6;">
+                    Six-frame translation analysis to identify:
+                    </p>
+                    <ul style="color: #E8EAED; font-size: 0.85rem; margin-left: 1.2rem;">
+                        <li>Open reading frames (ORFs)</li>
+                        <li>Potential coding regions</li>
+                        <li>Start/stop codons</li>
+                        <li>Protein translations</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("### Additional Analyses")
             st.markdown("""
             - **Nucleotide Composition** - A, T, C, G distribution with interactive charts
             - **Quality Scores** - Phred score analysis for FASTQ files  
@@ -310,51 +340,115 @@ def main():
             - **Statistical Reports** - Comprehensive metrics and summaries
             """)
         
-        with col2:
-            st.markdown("#### Supported File Formats")
-            st.markdown("""
-            **FASTA (.fasta, .fa)**
-            - Standard sequence format
-            - DNA, RNA, or protein sequences
-            - Header line starts with `>`
+        with tab3:
+            st.markdown("### Supported Formats")
             
-            **FASTQ (.fastq, .fq)**  
-            - Sequencing data with quality scores
-            - Phred quality metrics included
-            - Commonly from Illumina, PacBio, etc.
-            """)
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                #### FASTA Format (.fasta, .fa)
+                
+                **Description:**
+                - Standard sequence format for DNA, RNA, or protein sequences
+                - Header line starts with `>` followed by sequence identifier
+                - Sequence data follows on subsequent lines
+                
+                **Example:**
+                ```
+                >sequence_1
+                ATCGATCGATCG
+                GCTAGCTAGCTA
+                >sequence_2
+                TTAACCGGTTAA
+                ```
+                
+                **Use Cases:**
+                - Reference genomes
+                - Gene sequences
+                - Protein sequences
+                - Assembled contigs
+                """)
+            
+            with col2:
+                st.markdown("""
+                #### FASTQ Format (.fastq, .fq)
+                
+                **Description:**
+                - Sequencing data with quality scores
+                - Four lines per sequence record
+                - Includes Phred quality scores for each base
+                
+                **Example:**
+                ```
+                @SEQ_ID
+                GATTTGGGGTTCAAAGCAGTATCGATCAAATAGTAAATCCATTTGTTCAACTCACAGTTT
+                +
+                !''*((((***+))%%%++)(%%%%).1***-+*''))**55CCF>>>>>>CCCCCCC65
+                ```
+                
+                **Use Cases:**
+                - Illumina sequencing output
+                - PacBio reads
+                - Nanopore data
+                - Quality control analysis
+                """)
         
-        # Example use cases
-        st.markdown("---")
-        st.markdown("### Example Use Cases")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown("""
-            **🔬 Research**
-            - Genome assembly validation
-            - Gene prediction preprocessing
-            - Comparative genomics studies
-            - Metagenomics analysis
-            """)
-        
-        with col2:
-            st.markdown("""
-            **🏥 Clinical**
-            - Pathogen identification
-            - Variant calling prep
-            - Quality control checks
-            - Contamination detection
-            """)
-        
-        with col3:
-            st.markdown("""
-            **📚 Education**
-            - Teaching bioinformatics
-            - Sequence analysis labs
-            - Demonstrating concepts
-            - Student projects
-            """)
+        with tab4:
+            st.markdown("### Application Areas")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("""
+                #### 🔬 Research Applications
+                
+                **Genomics Research:**
+                - Genome assembly validation
+                - Gene prediction preprocessing
+                - Comparative genomics studies
+                - Metagenomics analysis
+                
+                **Molecular Biology:**
+                - PCR primer design
+                - Probe development
+                - Restriction site analysis
+                - Sequence optimization
+                """)
+            
+            with col2:
+                st.markdown("""
+                #### 🏥 Clinical Applications
+                
+                **Diagnostics:**
+                - Pathogen identification
+                - Variant calling preparation
+                - Quality control checks
+                - Contamination detection
+                
+                **Precision Medicine:**
+                - Biomarker discovery
+                - Drug target analysis
+                - Mutation screening
+                - Resistance profiling
+                """)
+            
+            with col3:
+                st.markdown("""
+                #### 📚 Educational Applications
+                
+                **Teaching:**
+                - Bioinformatics courses
+                - Sequence analysis labs
+                - Demonstrating concepts
+                - Hands-on training
+                
+                **Student Projects:**
+                - Research projects
+                - Data analysis assignments
+                - Computational biology
+                - Thesis work
+                """)
         
         return
     

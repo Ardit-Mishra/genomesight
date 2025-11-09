@@ -23,7 +23,8 @@ The application features a professional dark theme optimized for extended analys
 - **Information-Rich Cards**: Dark backgrounds with comprehensive feature descriptions
 - **Clear Typography**: Light text on dark backgrounds for comfortable reading
 - **Prominent Upload**: File upload positioned in main content area for easy access
-- **Feature Showcase**: Detailed explanations of analysis capabilities
+- **Tabbed Information**: Four organized tabs (Overview, Features & Capabilities, File Formats, Use Cases)
+- **Feature Showcase**: Detailed explanations of analysis capabilities organized logically
 
 ### Design Principles
 - **Informative**: Clear descriptions of what each analysis does and why it's useful
