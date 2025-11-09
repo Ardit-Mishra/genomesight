@@ -8,28 +8,28 @@ Preferred communication style: Simple, everyday language.
 
 # UI/UX Design System
 
-## Neural Bio-Futurism Theme (Updated November 2025)
-The application features a distinctive Neural Bio-Futurism design aesthetic that fuses AI minimalism with biological elegance. This research-grade interface is optimized for extended analysis sessions while maintaining visual sophistication.
+## Clean Simple Theme (Updated November 2025)
+The application features a clean, simple design aesthetic that prioritizes readability and ease of use. The straightforward interface is professional and accessible for all users.
 
 ### Color Palette
-- **Background**: Charcoal Black (#0B0E13) - Deep, neutral base for reduced eye strain
-- **Surfaces**: Gunmetal (rgba(22, 27, 34, 0.7)) - Semi-transparent panels with glass-morphism
-- **Primary Gradient**: Cyan-Teal (linear-gradient(90deg, #00D8B4, #38BDF8)) - Main accent for interactive elements
-- **Typography**: Light Gray (#E2E8F0) for primary text, Slate (#94A3B8) for secondary text
-- **Accent**: Magenta-Violet (#C084FC) - Reserved for special highlights and alerts
-- **DNA Base Colors**: A=#FF6B6B (red), T=#FFD93D (yellow), C=#6BCB77 (green), G=#4D96FF (blue)
+- **Background**: White (#FFFFFF) - Clean, bright base
+- **Surfaces**: Light Gray (#F8F9FA) - Subtle card backgrounds
+- **Primary Accent**: Blue (#3498DB) - Simple, professional accent color
+- **Typography**: Dark Gray (#2C3E50) for primary text, Medium Gray (#7F8C8D) for secondary text
+- **Borders**: Light Gray (#E0E0E0) - Subtle borders for separation
+- **DNA Base Colors**: A=#E74C3C (red), T=#F39C12 (orange), C=#27AE60 (green), G=#3498DB (blue)
 
-### Visual Effects
-- **Glass-morphism**: Semi-transparent surfaces with backdrop-filter blur effects for depth and hierarchy
-- **Bioluminescent Glow**: Subtle box-shadow effects using cyan-teal colors on interactive elements
-- **Gradient Animations**: Smooth color transitions and hover states for enhanced interactivity
-- **Card Elevation**: Multi-layer shadows creating depth and visual separation between content sections
+### Visual Style
+- **Simple Cards**: White backgrounds with light gray borders and minimal shadows
+- **Clean Typography**: Dark text on light backgrounds for optimal readability
+- **Straightforward Buttons**: Solid blue buttons with simple hover states
+- **Minimal Effects**: No gradients, glows, or complex visual effects
 
 ### Design Principles
-- **Research-Grade**: Professional interface suitable for academic and clinical use
-- **Accessibility**: WCAG-compliant contrast ratios ensuring readability
-- **Consistent Theming**: Unified color language throughout all UI components
-- **Performance**: CSS-based animations for smooth 60fps interactions
+- **Simplicity**: Clean, straightforward interface without unnecessary decorations
+- **Readability**: High contrast between text and backgrounds
+- **Professionalism**: Suitable for scientific and research use
+- **Accessibility**: WCAG-compliant design for all users
 
 # System Architecture
 

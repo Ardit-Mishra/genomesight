@@ -22,347 +22,169 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Neural Bio-Futurism Theme - Custom CSS
+# Clean Simple Theme - Custom CSS
 st.markdown("""
 <style>
-    /* Global Base Styles */
+    /* Global Base Styles - Clean Light Background */
     .stApp {
-        background-color: #0B0E13;
-        color: #E2E8F0;
+        background-color: #FFFFFF;
+        color: #2C3E50;
     }
     
-    /* Main Hero Header with Bioluminescent Glow */
+    /* Main Header - Simple and Clean */
     .main-header {
-        font-size: 3.5rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #00D8B4, #38BDF8, #00D8B4);
-        background-size: 200% 100%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-align: center;
-        margin: 2rem 0;
-        padding: 1rem;
-        animation: gradientFlow 4s ease infinite, biolumGlow 2s ease-in-out infinite alternate;
-        filter: drop-shadow(0 0 20px rgba(0, 216, 180, 0.4));
-    }
-    
-    @keyframes gradientFlow {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    
-    @keyframes biolumGlow {
-        from { 
-            filter: drop-shadow(0 0 15px rgba(0, 216, 180, 0.3));
-        }
-        to { 
-            filter: drop-shadow(0 0 30px rgba(0, 216, 180, 0.6));
-        }
-    }
-    
-    /* Section Headers with Gradient Underline */
-    .section-header {
-        font-size: 1.75rem;
+        font-size: 2.5rem;
         font-weight: 600;
-        background: linear-gradient(90deg, #00D8B4, #38BDF8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #2C3E50;
+        text-align: center;
         margin: 2rem 0 1rem 0;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid transparent;
-        border-image: linear-gradient(90deg, #00D8B4, #38BDF8, transparent) 1;
-        position: relative;
+        padding: 1rem;
+        border-bottom: 3px solid #3498DB;
     }
     
-    .section-header::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, #00D8B4, #38BDF8, transparent);
-        box-shadow: 0 0 10px rgba(0, 216, 180, 0.5);
+    /* Section Headers - Simple Underline */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #34495E;
+        margin: 2rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #E0E0E0;
     }
     
-    /* Glass-Morphism Cards with Bioluminescent Glow */
+    /* Cards - Simple White Cards with Border */
     .metric-card {
-        background: rgba(22, 27, 34, 0.7) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        padding: 2rem !important;
-        border-radius: 1.25rem !important;
-        border: 1px solid rgba(0, 216, 180, 0.3) !important;
-        box-shadow: 
-            0 8px 32px rgba(0, 216, 180, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(0, 216, 180, 0.1), transparent);
-        transition: left 0.5s;
-        z-index: 0;
+        background: #FFFFFF !important;
+        padding: 1.5rem !important;
+        border-radius: 8px !important;
+        border: 1px solid #E0E0E0 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        margin-bottom: 1rem;
     }
     
     .metric-card:hover {
-        transform: translateY(-4px) !important;
-        border-color: rgba(56, 189, 248, 0.6) !important;
-        box-shadow: 
-            0 12px 48px rgba(0, 216, 180, 0.2),
-            0 0 20px rgba(56, 189, 248, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
     }
     
-    .metric-card:hover::before {
-        left: 100%;
-    }
-    
-    /* Additional Card Styling for Streamlit Metrics */
+    /* Streamlit Metrics - Clean Style */
     div[data-testid="stMetric"], div[data-testid="metric-container"] {
-        background: rgba(22, 27, 34, 0.7) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border-radius: 1rem !important;
-        border: 1px solid rgba(0, 216, 180, 0.2) !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 4px 20px rgba(0, 216, 180, 0.1) !important;
+        background: #F8F9FA !important;
+        border-radius: 8px !important;
+        border: 1px solid #E0E0E0 !important;
+        padding: 1rem !important;
     }
     
-    /* File Uploader with Glowing Drop Zone */
+    /* File Uploader - Simple Border */
     .stFileUploader > div > div > div {
-        background: rgba(22, 27, 34, 0.5);
-        backdrop-filter: blur(8px);
-        border: 2px dashed rgba(0, 216, 180, 0.4);
-        border-radius: 1.25rem;
-        padding: 2.5rem;
-        transition: all 0.3s ease;
-        box-shadow: inset 0 0 20px rgba(0, 216, 180, 0.05);
+        background: #F8F9FA;
+        border: 2px dashed #3498DB;
+        border-radius: 8px;
+        padding: 2rem;
     }
     
     .stFileUploader > div > div > div:hover {
-        border-color: rgba(56, 189, 248, 0.8);
-        background: rgba(22, 27, 34, 0.8);
-        box-shadow: 
-            0 0 30px rgba(0, 216, 180, 0.2),
-            inset 0 0 30px rgba(0, 216, 180, 0.1);
+        border-color: #2980B9;
+        background: #EBF5FB;
     }
     
-    /* Select Boxes and Inputs with Glass Effect */
-    .stSelectbox > div > div, .stTextInput > div > div > input {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(0, 216, 180, 0.3);
-        border-radius: 0.75rem;
-        color: #E2E8F0;
-        transition: all 0.3s ease;
-    }
-    
-    .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {
-        border-color: rgba(56, 189, 248, 0.6);
-        box-shadow: 0 0 15px rgba(0, 216, 180, 0.2);
-    }
-    
-    /* Checkboxes with Gradient Accent */
-    .stCheckbox > label {
-        color: #E2E8F0;
-        font-weight: 500;
-        transition: color 0.3s ease;
-    }
-    
-    .stCheckbox > label:hover {
-        color: #00D8B4;
-    }
-    
-    /* Buttons with Cyan-Teal Gradient and Glow - Multiple Selectors for Streamlit */
+    /* Buttons - Simple Blue */
     .stButton > button, button[kind="primary"], button[kind="secondary"] {
-        background: linear-gradient(135deg, #00D8B4, #38BDF8) !important;
+        background: #3498DB !important;
         color: white !important;
         border: none !important;
-        border-radius: 0.75rem !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 
-            0 4px 20px rgba(0, 216, 180, 0.3),
-            0 0 10px rgba(56, 189, 248, 0.2) !important;
-        position: relative;
-        overflow: hidden;
+        border-radius: 6px !important;
+        padding: 0.5rem 1.5rem !important;
+        font-weight: 500 !important;
     }
     
     .stButton > button:hover, button[kind="primary"]:hover, button[kind="secondary"]:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 
-            0 8px 30px rgba(0, 216, 180, 0.5),
-            0 0 20px rgba(56, 189, 248, 0.4) !important;
-        filter: brightness(1.1) !important;
+        background: #2980B9 !important;
     }
     
-    .stButton > button:active, button[kind="primary"]:active {
-        transform: translateY(-1px) !important;
-    }
-    
-    /* Expanders with Glass Effect */
-    .stExpander {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(0, 216, 180, 0.2);
-        border-radius: 1rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    
-    .stExpander:hover {
-        border-color: rgba(56, 189, 248, 0.4);
-        box-shadow: 0 4px 20px rgba(0, 216, 180, 0.15);
-    }
-    
-    /* Data Frames with Subtle Glow */
-    .stDataFrame {
-        background: rgba(22, 27, 34, 0.5);
-        backdrop-filter: blur(8px);
-        border-radius: 0.75rem;
-        border: 1px solid rgba(0, 216, 180, 0.2);
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Alert Messages with Magenta Accents */
-    .stAlert {
-        background: rgba(22, 27, 34, 0.7);
-        backdrop-filter: blur(10px);
-        border-left: 4px solid #C084FC;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 15px rgba(192, 132, 252, 0.1);
-    }
-    
-    /* Success/Info/Warning/Error Styling */
-    div[data-baseweb="notification"] {
-        background: rgba(22, 27, 34, 0.9);
-        backdrop-filter: blur(15px);
-        border-radius: 0.75rem;
-        border: 1px solid rgba(0, 216, 180, 0.3);
-    }
-    
-    /* Progress Bars with Gradient */
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #00D8B4, #38BDF8);
-        box-shadow: 0 0 15px rgba(0, 216, 180, 0.5);
-    }
-    
-    /* Sidebar with Dark Glass - Enhanced with !important */
+    /* Sidebar - Simple Light Gray */
     section[data-testid="stSidebar"], [data-testid="stSidebar"] > div {
-        background: linear-gradient(180deg, rgba(11, 14, 19, 0.95), rgba(22, 27, 34, 0.95)) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-right: 1px solid rgba(0, 216, 180, 0.2) !important;
+        background: #F8F9FA !important;
+        border-right: 1px solid #E0E0E0 !important;
     }
     
-    section[data-testid="stSidebar"]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(180deg, rgba(0, 216, 180, 0.05), rgba(56, 189, 248, 0.05));
-        pointer-events: none;
-        z-index: 0;
-    }
-    
-    /* Tab Navigation with Gradient */
+    /* Tabs - Simple Style */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 1rem;
-        background: rgba(22, 27, 34, 0.4);
-        backdrop-filter: blur(10px);
-        padding: 0.5rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(0, 216, 180, 0.2);
+        gap: 0.5rem;
+        border-bottom: 2px solid #E0E0E0;
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: rgba(22, 27, 34, 0.6);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 0.75rem;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
         padding: 0.75rem 1.5rem;
-        color: #94A3B8;
+        color: #7F8C8D;
         font-weight: 500;
-        transition: all 0.3s ease;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(22, 27, 34, 0.8);
-        border-color: rgba(0, 216, 180, 0.4);
-        color: #E2E8F0;
+        color: #2C3E50;
+        border-bottom-color: #BDC3C7;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #00D8B4, #38BDF8);
-        border: 1px solid transparent;
-        color: white;
-        box-shadow: 
-            0 4px 20px rgba(0, 216, 180, 0.4),
-            0 0 15px rgba(56, 189, 248, 0.3);
+        color: #3498DB;
+        border-bottom-color: #3498DB;
     }
     
-    /* Metrics with Glow */
-    div[data-testid="stMetricValue"] {
-        color: #E2E8F0;
-        font-weight: 600;
-        text-shadow: 0 0 10px rgba(0, 216, 180, 0.3);
+    /* Progress Bar - Simple Blue */
+    .stProgress > div > div > div {
+        background: #3498DB;
     }
     
-    /* Scrollbar Styling */
+    /* Expanders - Simple */
+    .stExpander {
+        background: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    /* Data Frames - Clean */
+    .stDataFrame {
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+    }
+    
+    /* Inputs - Simple */
+    .stSelectbox > div > div, .stTextInput > div > div > input {
+        border: 1px solid #D0D0D0;
+        border-radius: 6px;
+    }
+    
+    .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {
+        border-color: #3498DB;
+    }
+    
+    /* Simple Scrollbar */
     ::-webkit-scrollbar {
         width: 10px;
         height: 10px;
     }
     
     ::-webkit-scrollbar-track {
-        background: #0B0E13;
+        background: #F0F0F0;
     }
     
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #00D8B4, #38BDF8);
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 216, 180, 0.5);
+        background: #BDC3C7;
+        border-radius: 5px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, #38BDF8, #00D8B4);
+        background: #95A5A6;
     }
     
     /* DNA Nucleotide Colors */
-    .nucleotide-a { color: #FF6B6B; }
-    .nucleotide-t { color: #FFD93D; }
-    .nucleotide-c { color: #6BCB77; }
-    .nucleotide-g { color: #4D96FF; }
-    
-    /* Enhanced Typography */
-    h1, h2, h3 {
-        color: #E2E8F0;
-    }
-    
-    p, span, div {
-        color: #E2E8F0;
-    }
-    
-    /* Subtle Text */
-    .stMarkdown small, .caption {
-        color: #94A3B8;
-    }
+    .nucleotide-a { color: #E74C3C; }
+    .nucleotide-t { color: #F39C12; }
+    .nucleotide-c { color: #27AE60; }
+    .nucleotide-g { color: #3498DB; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -573,14 +395,13 @@ def main():
 
 def display_welcome_screen():
     """Display welcome screen with instructions"""
-    st.markdown('<h2 class="section-header">Welcome to Genome Sequencing Analyzer</h2>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Genome Sequencing Analyzer</h1>', unsafe_allow_html=True)
     
-    # Hero section with Neural Bio-Futurism theme
+    # Simple hero section
     st.markdown("""
-    <div style="text-align: center; padding: 3rem; background: rgba(22, 27, 34, 0.7); backdrop-filter: blur(15px); border-radius: 1.5rem; margin: 2rem 0; border: 1px solid rgba(0, 216, 180, 0.3); box-shadow: 0 8px 32px rgba(0, 216, 180, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
-        <h3 style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2rem; font-weight: 700; margin-bottom: 1rem; filter: drop-shadow(0 0 10px rgba(0, 216, 180, 0.4));">🧬 Neural Bio-Futurism Genome Analysis</h3>
-        <p style="color: #E2E8F0; font-size: 1.2rem; margin-bottom: 1.5rem; line-height: 1.6;">Upload your DNA/RNA sequences and experience cutting-edge analysis powered by precision genomics</p>
-        <p style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; font-size: 1.1rem;">✨ Precision Medicine Platform ✨</p>
+    <div style="text-align: center; padding: 2rem; background: #F8F9FA; border-radius: 8px; margin: 2rem 0; border: 1px solid #E0E0E0;">
+        <p style="color: #2C3E50; font-size: 1.2rem; margin-bottom: 1rem;">Upload your DNA/RNA sequences for comprehensive genomic analysis</p>
+        <p style="color: #7F8C8D; font-size: 1rem;">Analyze GC content, nucleotide composition, quality metrics, and more</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -588,76 +409,71 @@ def display_welcome_screen():
     
     with col1:
         st.markdown("""
-        ### 🚀 **Advanced Features**
-        ✅ **Multi-format Support**: FASTA and FASTQ files  
-        ✅ **Real-time Analysis**: GC content, nucleotide composition, quality metrics  
-        ✅ **Interactive Visualizations**: Dynamic charts with Plotly  
-        ✅ **Batch Processing**: Handle up to 500 sequences efficiently  
-        ✅ **Pattern Search**: Find specific DNA motifs and sequences  
-        ✅ **Export Options**: CSV, JSON, and comprehensive text reports  
-        ✅ **Dark Theme**: Easy on the eyes for long analysis sessions
+        ### Features
+        - **Multi-format Support**: FASTA and FASTQ files  
+        - **Real-time Analysis**: GC content, nucleotide composition, quality metrics  
+        - **Interactive Charts**: Dynamic visualizations with Plotly  
+        - **Batch Processing**: Handle multiple sequences efficiently  
+        - **Pattern Search**: Find specific DNA motifs  
+        - **Export Options**: CSV, JSON, and text reports
         """)
     
     with col2:
         st.markdown("""
-        ### 📋 **Quick Start Guide**
+        ### Quick Start
         
-        **Step 1:** 📁 Upload Files  
-        Use the sidebar to drag & drop your sequence files
+        **1. Upload Files**  
+        Use the sidebar to upload your sequence files
         
-        **Step 2:** ⚙️ Configure Analysis  
-        Choose which analyses to run and set parameters
+        **2. Configure Analysis**  
+        Choose which analyses to run
         
-        **Step 3:** 🚀 Start Processing  
-        Click "Start Analysis" and watch the magic happen
+        **3. Start Processing**  
+        Click "Start Analysis"
         
-        **Step 4:** 📊 Explore Results  
-        Browse through Overview, Analysis, and Visualizations
+        **4. Explore Results**  
+        Browse through the tabs below
         
-        **Step 5:** 📥 Download Reports  
+        **5. Download Reports  
         Export your results in multiple formats
         """)
     
-    # Interactive demo section
-    st.markdown('<h3 class="section-header">🧪 Ready to Analyze Your Data?</h3>', unsafe_allow_html=True)
+    # File format info
+    st.markdown("### Supported Formats")
     
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown("""
         <div class="metric-card">
-            <h4 style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; margin-bottom: 0.75rem;">📁 FASTA Files</h4>
-            <p style="color: #E2E8F0; margin: 0 0 0.5rem 0;">DNA/RNA sequences with headers</p>
-            <code style="color: #00D8B4; background: rgba(0, 216, 180, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">>.fasta, .fa</code>
+            <h4 style="color: #2C3E50; margin-bottom: 0.75rem;">📁 FASTA Files</h4>
+            <p style="color: #7F8C8D; margin: 0 0 0.5rem 0;">DNA/RNA sequences with headers</p>
+            <code style="color: #3498DB; background: #EBF5FB; padding: 0.25rem 0.5rem; border-radius: 4px;">.fasta, .fa</code>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
         <div class="metric-card">
-            <h4 style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; margin-bottom: 0.75rem;">📊 FASTQ Files</h4>
-            <p style="color: #E2E8F0; margin: 0 0 0.5rem 0;">Sequences with quality scores</p>
-            <code style="color: #38BDF8; background: rgba(56, 189, 248, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">.fastq, .fq</code>
+            <h4 style="color: #2C3E50; margin-bottom: 0.75rem;">📊 FASTQ Files</h4>
+            <p style="color: #7F8C8D; margin: 0 0 0.5rem 0;">Sequences with quality scores</p>
+            <code style="color: #3498DB; background: #EBF5FB; padding: 0.25rem 0.5rem; border-radius: 4px;">.fastq, .fq</code>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
         <div class="metric-card">
-            <h4 style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; margin-bottom: 0.75rem;">🚀 Batch Mode</h4>
-            <p style="color: #E2E8F0; margin: 0 0 0.5rem 0;">Process multiple files at once</p>
-            <code style="color: #C084FC; background: rgba(192, 132, 252, 0.1); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">Up to 50 files</code>
+            <h4 style="color: #2C3E50; margin-bottom: 0.75rem;">🚀 Batch Mode</h4>
+            <p style="color: #7F8C8D; margin: 0 0 0.5rem 0;">Process multiple files at once</p>
+            <code style="color: #3498DB; background: #EBF5FB; padding: 0.25rem 0.5rem; border-radius: 4px;">Up to 50 files</code>
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: rgba(22, 27, 34, 0.6); backdrop-filter: blur(10px); border-radius: 1rem; margin: 2rem 0; border: 1px solid rgba(0, 216, 180, 0.3); box-shadow: 0 4px 20px rgba(0, 216, 180, 0.15);">
-        <p style="color: #E2E8F0; font-size: 1.2rem; margin: 0;">👈 <strong style="background: linear-gradient(90deg, #00D8B4, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Start by uploading your files in the sidebar</strong></p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("👈 Start by uploading your files in the sidebar")
 
 def display_overview(processed_files):
     """Display comprehensive overview with research insights"""
-    st.markdown('<h2 class="section-header">🔍 Comprehensive Dataset Overview</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">Dataset Overview</h2>', unsafe_allow_html=True)
     
     if not processed_files:
         st.warning("No files to analyze")
