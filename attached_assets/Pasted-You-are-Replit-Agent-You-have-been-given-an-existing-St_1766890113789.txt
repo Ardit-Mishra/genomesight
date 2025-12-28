@@ -1,0 +1,276 @@
+You are Replit Agent. You have been given an existing Streamlit genome analysis app from a Replit ZIP. Your job is to transform it into a portfolio-grade, “built-from-scratch” GitHub-ready repository while preserving functionality. Do EVERYTHING below automatically: refactor, rewrite docs, add tests, add comments, clean config, and produce final files that run on Replit with one click.
+
+NON-NEGOTIABLE GOALS
+- The final repo must clearly show original engineering work (clean architecture, docstrings, readable modules, tests, changelog).
+- Preserve current features and outputs as much as possible.
+- Add comments and docstrings to make it obvious how everything works.
+- Replit must run the app with a single Run button.
+- No paid keys, no external APIs, no secrets required.
+
+INPUT STATE (what you should expect)
+At repo root there may be files like:
+- app.py (Streamlit UI)
+- sequence_analyzer.py (core analysis logic)
+- utils.py (FASTA parsing, validation, exports)
+- visualizations.py (Plotly charts)
+- .replit, replit.md, pyproject.toml, .streamlit/
+And there may be junk from Replit ZIP extraction:
+- .local/, __pycache__/, *.pyc, a nested .git/ directory
+You MUST remove/ignore junk and ensure only the project files remain.
+
+STEP 1 — CLEANUP AND NORMALIZATION (DO THIS FIRST)
+1) Delete or exclude from repo:
+   - Any nested .git/ directory (DO NOT keep a .git folder inside this repo)
+   - .local/
+   - __pycache__/
+   - *.pyc, *.pyo
+   - .DS_Store
+2) Create a strong .gitignore at repo root including at least:
+   __pycache__/
+   *.py[cod]
+   .Python
+   .local/
+   .venv/
+   venv/
+   .env
+   .streamlit/secrets.toml
+   .pytest_cache/
+   .mypy_cache/
+   .ruff_cache/
+   dist/
+   build/
+   *.log
+
+STEP 2 — CREATE A PROFESSIONAL REPO STRUCTURE
+Create this structure exactly:
+
+genome-sequencer/   (repo root)
+  app/
+    __init__.py
+    main.py
+    pages/
+      1_Upload_and_Input.py
+      2_Basic_Analysis.py
+      3_Motifs_Search.py
+      4_Pairwise_Alignment.py
+      5_Visualization.py
+      6_Export.py
+    core/
+      __init__.py
+      sequence_analyzer.py
+      io_fasta.py
+      validation.py
+      motifs.py
+      orf.py
+      alignment.py
+      plots.py
+      export.py
+    ui/
+      __init__.py
+      components.py
+      styles.py
+  tests/
+    __init__.py
+    test_fasta_io.py
+    test_validation.py
+    test_orf.py
+    test_motifs.py
+    test_alignment.py
+  assets/
+    logo.png   (if none exists, generate a simple placeholder programmatically and save it)
+  .streamlit/
+    config.toml
+  README.md
+  CHANGELOG.md
+  LICENSE
+  requirements.txt
+  pyproject.toml (keep if present; ok to update)
+  .replit
+  replit.md  (optional; keep minimal or merge into README)
+
+IMPORTANT: Move existing logic into the new module layout. Do not leave all logic in a single file.
+
+STEP 3 — MIGRATE EXISTING CODE INTO CLEAN MODULES (PRESERVE FUNCTIONALITY)
+You must refactor the existing app.py + modules into:
+- app/main.py: Streamlit entrypoint + navigation + shared session state setup.
+- app/pages/*: each page contains ONLY UI and calls into core functions.
+- app/core/*: pure functions and classes (no Streamlit imports inside core).
+- app/ui/*: reusable Streamlit UI components and styling.
+
+Mapping rules:
+- FASTA parsing and multi-line cleaning -> app/core/io_fasta.py
+- Sequence validation and alphabet detection -> app/core/validation.py
+- Core metrics (GC, composition, transcription, translation) -> app/core/sequence_analyzer.py OR app/core/analysis functions inside it
+- ORF logic -> app/core/orf.py
+- Motif search with IUPAC ambiguity codes -> app/core/motifs.py
+- Pairwise alignment -> app/core/alignment.py
+- Plot creation wrappers -> app/core/plots.py (call Plotly functions from here)
+- Export helpers (CSV/JSON/FASTA/ZIP) -> app/core/export.py
+- Any leftover generic helpers -> app/core/sequence_analyzer.py or app/core/utils equivalent if needed, but prefer explicit modules above.
+
+Session state rules:
+- Use Streamlit session_state keys consistently:
+  - ss["seq_primary"], ss["seq_secondary"]
+  - ss["seq_type"] ("DNA" or "RNA")
+  - ss["analysis_results"] dict
+  - ss["orf_table"] (list[dict] or pandas DataFrame)
+  - ss["motif_hits"] etc.
+
+STEP 4 — ADD “FROM SCRATCH” QUALITY COMMENTS AND DOCS (DO NOT SKIP)
+1) Add module docstrings at the top of EVERY .py file describing:
+   - purpose
+   - main functions/classes
+   - inputs/outputs
+2) Add docstrings for EVERY public function and class.
+3) Add inline comments only where it adds clarity (avoid noise like commenting obvious lines).
+4) Add type hints across core modules (function params and returns).
+5) Add a small “Design Notes” section in README explaining:
+   - Why Streamlit
+   - How FASTA parsing works
+   - How ORFs are found (frames, start/stop)
+   - How IUPAC motif search is implemented
+   - How alignment is produced
+6) Include a clear “Architecture” diagram (Mermaid preferred).
+
+STEP 5 — FEATURES TO ENSURE (MATCH CURRENT + ADD MISSING CORE PORTFOLIO FEATURES)
+Your final app must include these pages/features (even if the original app already had some; ensure they are stable and well-presented):
+
+PAGE 1: Upload and Input
+- Textarea input for DNA/RNA
+- Upload FASTA (.fa/.fasta/.txt)
+- Parse multi-sequence FASTA:
+  - Allow user to select which record to analyze OR concatenate with separators (choose: default select first with dropdown)
+- “Use Example” button (provide 2 DNA + 1 RNA examples)
+- Validation: reject invalid characters, show warnings for N/ambiguous
+- Show detected type (DNA/RNA), length, base counts
+
+PAGE 2: Basic Analysis
+- GC%, AT% (or AU% for RNA), base composition
+- Reverse complement (for DNA), reverse (for RNA) with explanation
+- Transcription (DNA->RNA) and back transcription
+- Translation to protein:
+  - user selects reading frame (1/2/3)
+  - show protein sequence + length
+- Codon usage table (for DNA/RNA coding sequence; if not applicable, note limitations)
+
+PAGE 3: Motifs & Search
+- Motif search supports IUPAC ambiguity codes (REQUIRED):
+  - Implement your own IUPAC mapping (e.g., R=A/G, Y=C/T, etc.)
+  - Return all hit start indices (1-based and 0-based display)
+  - Provide a highlighted sequence view (simple: wrap matches with brackets or use HTML span)
+- Add “Common restriction sites” lookup:
+  - Hardcode a dict of ~10 common enzymes -> recognition sites
+  - Let user select enzyme and search
+
+PAGE 4: Pairwise Alignment
+- Accept second sequence input or FASTA upload
+- Provide Global and Local alignment option
+- Output:
+  - alignment score
+  - aligned sequences
+  - identity percentage
+  - simple match line (| for match, . for mismatch, space for gap)
+Use Biopython PairwiseAligner or pairwise2; wrap it cleanly in app/core/alignment.py.
+
+PAGE 5: Visualization
+- Sliding window GC content plot (window size slider)
+- Base composition bar chart
+- K-mer frequency plot (k=2..6 selectable)
+- Make sure plots are interactive with Plotly and render reliably
+
+PAGE 6: Export
+- Allow download of:
+  - JSON summary of analysis results
+  - CSV tables (ORFs, motif hits, codon usage, k-mers)
+  - FASTA exports:
+    - cleaned input
+    - translated protein
+  - One ZIP containing all exports
+
+ORF FINDER REQUIREMENTS (core portfolio feature)
+- Scan all 3 frames (and optionally reverse complement frames for DNA; include toggle)
+- Start codon default ATG (RNA AUG), allow user to add alternative start codons toggle
+- Stop codons standard
+- User sets minimum ORF length
+- Return table with: frame, start, end, length_nt, length_aa, peptide, start_codon, stop_codon
+- Ensure coordinates are clearly defined (1-based for user display)
+
+STEP 6 — MAKE UI LOOK PROFESSIONAL (STREAMLIT)
+- Consistent page title and sidebar branding (“Genome Sequencer” or “GenomeSight”; pick ONE name and use everywhere consistently)
+- Add a small logo in sidebar (assets/logo.png)
+- Add help tooltips in sidebar for key parameters
+- Use st.tabs for grouping within pages (e.g., “Summary / Tables / Sequences”)
+- Use st.status or st.spinner during computation
+- Provide friendly error messages (st.error) but also log stack traces to console via logging
+
+STEP 7 — REPLIT CONFIG (ONE-CLICK RUN)
+1) Update/create .replit so Run executes:
+   streamlit run app/main.py --server.port 5000 --server.address 0.0.0.0
+2) Ensure requirements.txt exists and includes all dependencies required for your code.
+3) If pyproject.toml is used, keep it consistent, but still provide requirements.txt for portability.
+
+STEP 8 — TESTS (PYTEST) — MUST PASS
+Write unit tests for core logic (no Streamlit in tests):
+- test_fasta_io.py:
+  - parse FASTA with headers and multi-line sequences
+  - rejects invalid chars
+- test_validation.py:
+  - detects DNA vs RNA
+  - handles ambiguous N
+- test_orf.py:
+  - known small sequence with known ORF(s) returns correct coordinates and peptide length
+- test_motifs.py:
+  - IUPAC motif matching (e.g., motif “ATGR” matches ATGA/ATGG)
+- test_alignment.py:
+  - global alignment identity % correct on simple examples
+Include at least 2-3 tests per file.
+
+STEP 9 — DOCUMENTATION THAT SELLS THIS AS “FROM SCRATCH”
+Create README.md with:
+- Project title + 1-line pitch
+- Screenshots section (placeholders okay, e.g., “/assets/screenshot_1.png” with note)
+- Feature list (mapped to pages)
+- Architecture diagram (Mermaid)
+- Installation/run locally:
+  - python -m venv .venv
+  - pip install -r requirements.txt
+  - streamlit run app/main.py
+- Run on Replit instructions
+- Testing:
+  - pytest -q
+- “Built from scratch” section:
+  - code organization
+  - testing philosophy
+  - validation rules
+  - algorithm notes (ORF + IUPAC)
+- Roadmap:
+  - multi-sequence batch mode
+  - BLAST integration (future, optional)
+  - phylogenetic tree (future)
+Create CHANGELOG.md with at least 5 meaningful entries (initial build, refactor, ORF, motifs, alignment, exports).
+Add MIT LICENSE.
+
+STEP 10 — FINAL VERIFICATION (DO THIS BEFORE FINISHING)
+1) Run:
+   - python -m compileall app
+   - pytest -q
+2) Start Streamlit (simulate):
+   - streamlit run app/main.py --server.port 5000
+Ensure no import errors.
+3) Confirm no references to deleted junk directories.
+4) Confirm all pages load without needing a second sequence unless alignment page.
+
+OUTPUT REQUIREMENTS
+- Implement the full refactor and provide the final complete file tree.
+- Ensure every file has complete content.
+- Ensure the app is functional and matches the described features.
+- Keep the code readable, modular, and obviously hand-crafted.
+
+IMPORTANT STYLE RULES
+- Core modules MUST NOT import streamlit.
+- UI pages MUST NOT re-implement algorithms; call core functions.
+- Avoid giant monolithic functions; split into small testable units.
+- Use logging (Python logging module) for debug info.
+- Use dataclasses where beneficial (e.g., ORF record, MotifHit).
+
+NOW EXECUTE ALL STEPS ON THIS REPO.
