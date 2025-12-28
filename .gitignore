@@ -9,23 +9,40 @@ __pycache__/
 venv/
 ENV/
 env/
+.pythonlibs/
 
 # Distribution / packaging
 build/
 dist/
 *.egg-info/
 *.egg
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+.installed.cfg
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
 # Replit local files
 .local/
 .cache/
 .upm/
+.replit
+replit.nix
+.config/
+.breakpoints
 
 # Environment variables
 .env
@@ -37,6 +54,7 @@ dist/
 .coverage
 htmlcov/
 .tox/
+.nox/
 
 # Type checking
 .mypy_cache/
@@ -59,3 +77,13 @@ Thumbs.db
 # Database
 *.db
 *.sqlite3
+
+# Application generated
+*.zip
+exports/
+temp/
+
+# Build artifacts
+*.manifest
+*.spec
+*.so
