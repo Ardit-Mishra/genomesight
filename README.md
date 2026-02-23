@@ -1,9 +1,6 @@
-# Genome Sequencing Analyzer
+# GenomeSight
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-FF4B4B.svg)](https://streamlit.io/)
-[![Biopython](https://img.shields.io/badge/Biopython-1.80+-green.svg)](https://biopython.org/)
 
 A comprehensive bioinformatics web application for DNA/RNA sequence analysis. Built with Python and Streamlit, featuring GC content analysis, nucleotide composition, k-mer frequency analysis, Open Reading Frame (ORF) detection, motif discovery, and interactive visualizations.
 
@@ -202,11 +199,11 @@ pytest tests/ --cov=app --cov-report=html
 If you use this software in your research, please cite:
 
 ```bibtex
-@software{mishra2025genome,
+@software{mishra2025genomesight,
   author = {Mishra, Ardit},
-  title = {Genome Sequencing Analyzer: A Comprehensive DNA/RNA Analysis Tool},
+  title = {GenomeSight: Interactive Genome Sequence Analysis Toolkit},
   year = {2025},
-  url = {https://github.com/yourusername/genome-sequencing-analyzer},
+  url = {https://github.com/Ardit-Mishra/genomesight},
   version = {1.0.0}
 }
 ```
@@ -223,8 +220,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Ardit Mishra**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-
+- GitHub: [@Ardit-Mishra](https://github.com/Ardit-Mishra)
+- Website: https://arditmishra.com
+  
 ## Acknowledgments
 
 - [Biopython](https://biopython.org/) for sequence analysis tools
