@@ -7,11 +7,7 @@
 
 A comprehensive bioinformatics web application for DNA/RNA sequence analysis. Built with Python and Streamlit, featuring GC content analysis, nucleotide composition, k-mer frequency analysis, Open Reading Frame (ORF) detection, motif discovery, and interactive visualizations.
 
-<!-- Screenshot placeholder - add screenshot after deployment
-<p align="center">
-  <img src="assets/screenshot.png" alt="Genome Sequencing Analyzer Screenshot" width="800">
-</p>
--->
+**Live Demo**: [https://genomesight.arditmishra.com](https://genomesight.arditmishra.com)
 
 ## Features
 
