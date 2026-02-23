@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A comprehensive bioinformatics web application for DNA/RNA sequence analysis. Built with Python and Streamlit, featuring GC content analysis, nucleotide composition, k-mer frequency analysis, Open Reading Frame (ORF) detection, motif discovery, and interactive visualizations.
+GenomeSight is an interactive genome sequence analysis toolkit implemented in Python using Streamlit. It supports exploratory analysis of DNA and RNA sequences, including GC content calculation, k-mer profiling, ORF detection, motif search, restriction site identification, and quality assessment with interactive visualizations.
 
-**Live Demo**: [https://genomesight.arditmishra.com](https://genomesight.arditmishra.com)
+🌐 Live Demo: https://genomesight.arditmishra.com
 
 ## Features
 
@@ -28,31 +28,21 @@ A comprehensive bioinformatics web application for DNA/RNA sequence analysis. Bu
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/genome-sequencing-analyzer.git
-cd genome-sequencing-analyzer
+git clone https://github.com/Ardit-Mishra/genomesight.git
+cd genomesight
 
-# Install dependencies
-pip install -r requirements.txt
+# (Optional) Create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies (recommended)
+pip install -e .
 
 # Run the application
 streamlit run main.py --server.port 5000
 ```
 
 The application will be available at `http://localhost:5000`
-
-### Using Conda
-
-```bash
-# Create environment
-conda create -n genome-analyzer python=3.11
-conda activate genome-analyzer
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run
-streamlit run main.py --server.port 5000
-```
 
 ## Usage
 
@@ -101,8 +91,8 @@ for seq in sequences:
 ## Project Structure
 
 ```
-genome-sequencing-analyzer/
-├── main.py                     # Application entry point
+genomesight/
+├── main.py                     # Streamlit application entry point
 ├── app/
 │   ├── core/                   # Core analysis modules (standalone library)
 │   │   ├── sequence_analyzer.py    # GC content, composition, k-mers
@@ -116,9 +106,12 @@ genome-sequencing-analyzer/
 │   └── ui/                     # Streamlit UI components
 │       ├── components.py           # Reusable widgets
 │       └── styles.py               # CSS theming
-├── tests/                      # Unit tests
-├── sample_data/                # Example files
-└── requirements.txt            # Dependencies
+├── .streamlit/                     # Streamlit configuration
+├── docs/                           # Documentation and GitHub instructions
+├── tests/                          # Unit tests
+├── sample_data/                    # Example FASTA/FASTQ files
+├── pyproject.toml                  # Project configuration and dependencies
+└── uv.lock                         # Locked dependency versions
 ```
 
 ## API Reference
@@ -183,16 +176,16 @@ pytest tests/test_sequence_analyzer.py -v
 # Run with coverage
 pytest tests/ --cov=app --cov-report=html
 ```
+## Core Dependencies
 
-## Dependencies
+| Package | Purpose |
+|---------|---------|
+| Biopython | Sequence analysis and file parsing |
+| NumPy | Numerical computation |
+| Pandas | Data handling |
+| Plotly | Interactive visualization |
+| Streamlit | Web application framework |
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| Biopython | >=1.80 | Sequence analysis and file parsing |
-| NumPy | >=1.24 | Numerical computations |
-| Pandas | >=2.0 | Data manipulation |
-| Plotly | >=5.15 | Interactive visualizations |
-| Streamlit | >=1.28 | Web application framework |
 
 ## Citation
 
