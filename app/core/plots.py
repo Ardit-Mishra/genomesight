@@ -7,7 +7,7 @@ suitable for scientific applications.
 
 Design Notes:
     - All functions return Plotly Figure objects
-    - Dark theme with teal accent colors
+    - "Laboratory Instrument" dark theme, shared with the rest of the portfolio
     - Interactive by default with hover information
     - No Streamlit dependencies
 
@@ -31,19 +31,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# Single source of truth for the palette. Charts previously hardcoded their own
+# hexes, so the plots and the surrounding UI drifted apart; importing keeps one
+# definition. (styles.py has no Streamlit dependency, so this stays importable.)
+from app.ui.styles import COLORS, NUCLEOTIDE_COLORS  # noqa: E402
+
 DARK_THEME = {
-    'paper_bgcolor': 'rgba(26, 29, 41, 1)',
-    'plot_bgcolor': 'rgba(37, 41, 60, 1)',
-    'font_color': '#E8EAED'
+    'paper_bgcolor': COLORS['background'],
+    'plot_bgcolor': COLORS['surface'],
+    'font_color': COLORS['text_primary'],
 }
 
-NUCLEOTIDE_COLORS = {
-    'A': '#FF6B9D',
-    'T': '#FFC252',
-    'C': '#00C9A7',
-    'G': '#4D96FF',
-    'N': '#9CA3AF'
-}
+#: The accent used for a single data series, and the muted tone for reference
+#: lines and thresholds — a threshold is context, not a finding, so it never
+#: competes with the data.
+SERIES_COLOR = COLORS['primary']
+REFERENCE_COLOR = COLORS['text_secondary']
+THRESHOLD_COLOR = COLORS['warning']
 
 
 def apply_dark_theme(fig: go.Figure) -> go.Figure:
@@ -52,8 +56,8 @@ def apply_dark_theme(fig: go.Figure) -> go.Figure:
         paper_bgcolor=DARK_THEME['paper_bgcolor'],
         plot_bgcolor=DARK_THEME['plot_bgcolor'],
         font=dict(color=DARK_THEME['font_color']),
-        xaxis=dict(gridcolor='#373B4D', zerolinecolor='#373B4D'),
-        yaxis=dict(gridcolor='#373B4D', zerolinecolor='#373B4D')
+        xaxis=dict(gridcolor=COLORS['border'], zerolinecolor=COLORS['border']),
+        yaxis=dict(gridcolor=COLORS['border'], zerolinecolor=COLORS['border'])
     )
     return fig
 
@@ -85,7 +89,7 @@ def create_gc_plot(gc_contents: List[float], labels: List[str]) -> go.Figure:
     fig.add_vline(
         x=avg_gc,
         line_dash="dash",
-        line_color="#00C9A7",
+        line_color=SERIES_COLOR,
         annotation_text=f"Average: {avg_gc:.1f}%"
     )
     
@@ -133,15 +137,15 @@ def create_gc_sliding_window(
         y=gc_values,
         mode='lines',
         name='GC Content',
-        line=dict(color='#00C9A7', width=2),
+        line=dict(color=SERIES_COLOR, width=2),
         fill='tozeroy',
-        fillcolor='rgba(0, 201, 167, 0.2)'
+        fillcolor='rgba(110, 155, 255, 0.16)'
     ))
     
     fig.add_hline(
         y=50,
         line_dash="dash",
-        line_color="#9CA3AF",
+        line_color=REFERENCE_COLOR,
         annotation_text="50%"
     )
     
@@ -212,7 +216,7 @@ def create_kmer_plot(kmer_counts: Dict[str, int], k: int) -> go.Figure:
     fig.add_trace(go.Bar(
         x=kmers,
         y=counts,
-        marker_color='#00C9A7',
+        marker_color=SERIES_COLOR,
         text=counts,
         textposition='outside'
     ))
@@ -262,7 +266,7 @@ def create_quality_plot(quality_data: List[List[int]]) -> go.Figure:
         x=positions + positions[::-1],
         y=position_q75 + position_q25[::-1],
         fill='toself',
-        fillcolor='rgba(0, 201, 167, 0.2)',
+        fillcolor='rgba(110, 155, 255, 0.16)',
         line=dict(color='rgba(255,255,255,0)'),
         name='25-75 Percentile'
     ))
@@ -272,12 +276,12 @@ def create_quality_plot(quality_data: List[List[int]]) -> go.Figure:
         y=position_means,
         mode='lines',
         name='Mean Quality',
-        line=dict(color='#00C9A7', width=2)
+        line=dict(color=SERIES_COLOR, width=2)
     ))
     
-    fig.add_hline(y=20, line_dash="dash", line_color="#FFC252",
+    fig.add_hline(y=20, line_dash="dash", line_color=THRESHOLD_COLOR,
                   annotation_text="Q20")
-    fig.add_hline(y=30, line_dash="dash", line_color="#FF6B9D",
+    fig.add_hline(y=30, line_dash="dash", line_color=THRESHOLD_COLOR,
                   annotation_text="Q30")
     
     fig.update_layout(
@@ -305,7 +309,7 @@ def create_length_distribution(lengths: List[int]) -> go.Figure:
     fig.add_trace(go.Histogram(
         x=lengths,
         nbinsx=30,
-        marker_color='#00C9A7',
+        marker_color=SERIES_COLOR,
         opacity=0.7
     ))
     
@@ -313,7 +317,7 @@ def create_length_distribution(lengths: List[int]) -> go.Figure:
     fig.add_vline(
         x=avg_len,
         line_dash="dash",
-        line_color="#FFC252",
+        line_color=THRESHOLD_COLOR,
         annotation_text=f"Mean: {avg_len:.0f}"
     )
     
@@ -345,14 +349,14 @@ def create_orf_plot(orfs: List) -> go.Figure:
     
     lengths = [orf.length_nt for orf in orfs]
     fig.add_trace(
-        go.Histogram(x=lengths, nbinsx=20, marker_color='#00C9A7'),
+        go.Histogram(x=lengths, nbinsx=20, marker_color=SERIES_COLOR),
         row=1, col=1
     )
     
     frames = Counter([f"{orf.strand}{orf.frame}" for orf in orfs])
     fig.add_trace(
         go.Bar(x=list(frames.keys()), y=list(frames.values()),
-               marker_color='#4D96FF'),
+               marker_color=SERIES_COLOR),
         row=1, col=2
     )
     

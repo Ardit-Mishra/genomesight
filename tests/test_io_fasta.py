@@ -60,9 +60,12 @@ class TestFastaParsing:
         """Test parsing multi-line FASTA sequence."""
         content = ">seq1 description\nATGC\nGCTA\nAAAA"
         records = parse_fasta(content)
-        
+
         assert len(records) == 1
-        assert str(records[0].seq) == "ATGCGCTAAAA"
+        # ATGC + GCTA + AAAA = 12 residues. The previous expectation dropped a
+        # trailing A (11 residues), so this test failed against a correct parser.
+        assert str(records[0].seq) == "ATGCGCTAAAAA"
+        assert len(records[0].seq) == 12
     
     def test_parse_fasta_with_description(self):
         """Test parsing FASTA with descriptions."""

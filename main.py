@@ -1,15 +1,29 @@
 """
-Genome Sequencing Analyzer
+GenomeSight
 
-A comprehensive bioinformatics web application for DNA sequence analysis.
+A bioinformatics web application for DNA and RNA sequence analysis.
 Provides GC content calculation, nucleotide composition, k-mer analysis,
-ORF detection, motif discovery, and interactive visualizations.
+ORF detection, motif discovery, pairwise alignment, and interactive
+visualizations.
 
 Author: Ardit Mishra
 Version: 1.0.0
 """
 
 import streamlit as st
+
+# Must be the first Streamlit command the app executes. Keeping it directly
+# below the import — rather than after the `app.*` imports — means adding a
+# module-level st.* call to any of those modules can't break startup with
+# "set_page_config() can only be called once, and must be called as the first
+# Streamlit command".
+st.set_page_config(
+    page_title="GenomeSight",
+    page_icon="🧬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 from io import StringIO
 from datetime import datetime
 
@@ -18,6 +32,7 @@ from app.core.io_fasta import parse_sequences, detect_format
 from app.core.validation import validate_sequences
 from app.core.orf import find_orfs, get_orf_summary
 from app.core.motifs import search_motif, get_enzyme_list
+from app.core.alignment import align_sequences, format_alignment_display
 from app.core.plots import (
     create_gc_plot,
     create_gc_sliding_window,
@@ -29,23 +44,20 @@ from app.core.plots import (
 )
 from app.core.export import generate_json_report, generate_csv_report, create_download_zip
 from app.ui.styles import apply_dark_theme, COLORS
+from app.ui.icons import icon, section_header
 from app.ui.components import (
     display_sequence_card,
     display_metrics_row,
     display_analysis_results,
     file_uploader_section,
+    render_empty_state,
+    sidebar_section_header,
     display_orf_table,
     display_motif_results,
     display_stats_badges
 )
 
 
-st.set_page_config(
-    page_title="Genome Sequencing Analyzer",
-    page_icon="🧬",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 
 apply_dark_theme(st)
@@ -76,6 +88,8 @@ def initialize_session():
         st.session_state.file_format = None
     if 'analysis_results' not in st.session_state:
         st.session_state.analysis_results = None
+    if 'sample_loaded' not in st.session_state:
+        st.session_state.sample_loaded = False
 
 
 class SampleFile:
@@ -94,10 +108,15 @@ class SampleFile:
 
 def render_header():
     """Render the application header."""
-    st.markdown("""
-    <div style="text-align: center; padding: 2rem 0 1rem 0;">
-        <h1 class="main-header">🧬 Genome Sequencing Analyzer</h1>
-        <p class="subtitle">Comprehensive DNA/RNA sequence analysis platform</p>
+    # Left-aligned: the sequence and its numbers are the subject, and a centred
+    # masthead pushes them below the fold for no gain.
+    st.markdown(f"""
+    <div style="padding: 0.5rem 0 1.25rem 0; border-bottom: 1px solid var(--border, #232C36); margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            {icon('helix', 26, COLORS['text_primary'])}
+            <h1 class="main-header" style="margin: 0;">GenomeSight</h1>
+        </div>
+        <p class="subtitle">DNA and RNA sequence analysis &middot; deterministic, no model</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -125,30 +144,33 @@ def render_info_tabs():
     
     with features_tab:
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            st.markdown("""
-            **Basic Analysis**
-            - GC content calculation
-            - Nucleotide composition
-            - Sequence length statistics
-            - Quality score analysis (FASTQ)
-            
-            **Advanced Analysis**
-            - K-mer frequency analysis
-            - Open Reading Frame detection
-            - Motif and pattern search
-            - Restriction site mapping
-            """)
-        
+            st.markdown("**Basic Analysis**")
+            for name, text in (
+                ("composition", "GC content & nucleotide composition"),
+                ("ruler", "Sequence length statistics"),
+            ):
+                st.markdown(f'<div style="margin:.35rem 0 .35rem 0">{icon(name, 15, COLORS["text_secondary"])} &nbsp;{text}</div>', unsafe_allow_html=True)
+            st.markdown('<div style="margin:.35rem 0 .35rem 0">Quality score analysis (FASTQ)</div>', unsafe_allow_html=True)
+
+            st.markdown("**Advanced Analysis**")
+            for name, text in (
+                ("kmer", "K-mer frequency analysis"),
+                ("readingFrame", "Open reading frame (ORF) detection"),
+                ("motif", "Motif & restriction-site search (IUPAC patterns)"),
+                ("alignment", "Pairwise alignment — global (Needleman-Wunsch) or local (Smith-Waterman)"),
+            ):
+                st.markdown(f'<div style="margin:.35rem 0 .35rem 0">{icon(name, 15, COLORS["text_secondary"])} &nbsp;{text}</div>', unsafe_allow_html=True)
+
         with col2:
             st.markdown("""
             **Visualization**
-            - Interactive GC content plots
-            - Sliding window analysis
-            - Composition bar charts
-            - Quality score distributions
-            
+            - GC content distribution across sequences
+            - Nucleotide composition bar chart
+            - Sequence length distribution
+            - Quality score distribution (FASTQ only)
+
             **Export Options**
             - JSON structured data
             - CSV spreadsheet format
@@ -157,17 +179,26 @@ def render_info_tabs():
             """)
     
     with formats_tab:
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">'
+            f'{icon("sequenceFile", 16, COLORS["text_primary"])}<strong>FASTA Format</strong></div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("""
-        **FASTA Format**
         - Extension: `.fasta`, `.fa`, `.fna`
         - Contains sequence ID and nucleotide data
         - Widely used for reference genomes
-        
-        **FASTQ Format**
+        """)
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">'
+            f'{icon("sequenceFile", 16, COLORS["text_primary"])}<strong>FASTQ Format</strong></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("""
         - Extension: `.fastq`, `.fq`
         - Contains sequence + quality scores
         - Standard for sequencing reads
-        
+
         **Example FASTA:**
         ```
         >sequence_id description
@@ -196,8 +227,11 @@ def render_info_tabs():
 
 def render_upload_section():
     """Render the file upload section."""
+    if st.session_state.sequences is None:
+        render_empty_state()
+
     file_uploader_section()
-    
+
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -210,8 +244,19 @@ def render_upload_section():
     with col2:
         if st.button("Try Sample File", type="secondary", use_container_width=True):
             st.session_state.sample_loaded = True
-            uploaded_file = SampleFile(SAMPLE_FASTA, "sample_sequences.fasta")
-    
+
+    # A real upload is retained by the file_uploader widget across reruns, but a
+    # button is only True on the run that handled the click. Rebuilding the
+    # sample from session state keeps it loaded — otherwise every sidebar action
+    # after "Try Sample File" (k-mer, ORF, motif, alignment, export) reran with
+    # no file and silently rendered nothing.
+    if uploaded_file is None and st.session_state.sample_loaded:
+        uploaded_file = SampleFile(SAMPLE_FASTA, "sample_sequences.fasta")
+
+    # An explicit upload takes over from the sample.
+    if uploaded_file is not None and not isinstance(uploaded_file, SampleFile):
+        st.session_state.sample_loaded = False
+
     return uploaded_file
 
 
@@ -254,10 +299,16 @@ def process_uploaded_file(uploaded_file):
 
 def render_basic_stats(results: dict):
     """Render basic statistics section."""
-    st.markdown("### Analysis Results")
-    
+    st.markdown(
+        section_header(
+            'ruler', 'Analysis Results',
+            'Computed directly from the uploaded sequence(s) — no external calls or model in this path.'
+        ),
+        unsafe_allow_html=True,
+    )
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         st.metric("Sequences", f"{results.get('sequence_count', 0):,}")
     with col2:
@@ -266,22 +317,68 @@ def render_basic_stats(results: dict):
         st.metric("Avg GC%", f"{results.get('average_gc_content', 0):.1f}%")
     with col4:
         st.metric("Avg Length", f"{results.get('average_length', 0):.0f} bp")
-    
+
     st.markdown("---")
-    
+
+    # Two per row rather than three: at sidebar + narrow-viewport widths a
+    # three-way split truncates every chart title, and this row already
+    # matches the width the composition/length pair was designed at.
+    sequences = st.session_state.sequences or []
     col1, col2 = st.columns(2)
-    
+
     with col1:
         composition = results.get('nucleotide_composition', {})
         if composition:
             fig = create_composition_plot(composition)
             st.plotly_chart(fig, use_container_width=True)
-    
+
     with col2:
-        lengths = [len(seq.seq) for seq in st.session_state.sequences]
-        if lengths:
-            fig = create_length_distribution(lengths)
+        analyzer = st.session_state.analyzer
+        gc_contents = [analyzer.calculate_gc_content(str(seq.seq)) for seq in sequences]
+        labels = [seq.id for seq in sequences]
+        if gc_contents:
+            fig = create_gc_plot(gc_contents, labels)
+            # A per-sequence legend is useful at a handful of records; past
+            # that it turns into unreadable colour soup, so it's dropped
+            # rather than left to overrun the plot.
+            fig.update_layout(showlegend=len(labels) <= 12, legend_title_text="Sequence")
             st.plotly_chart(fig, use_container_width=True)
+
+    lengths = [len(seq.seq) for seq in sequences]
+    if lengths:
+        fig = create_length_distribution(lengths)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Quality scores only exist for FASTQ input — Biopython attaches
+    # per-base Phred scores as letter_annotations only when parsing that
+    # format, so this section has nothing to show for FASTA and stays hidden
+    # rather than rendering an empty chart.
+    if results.get('format') == 'fastq':
+        analyzer = st.session_state.analyzer
+        quality_stats = analyzer.calculate_quality_statistics(sequences)
+        if quality_stats:
+            st.markdown(
+                section_header(
+                    'ruler', 'Quality Scores',
+                    'Per-base Phred quality from the FASTQ file, pooled across all reads.'
+                ),
+                unsafe_allow_html=True,
+            )
+            q1, q2, q3, q4 = st.columns(4)
+            q1.metric("Mean Q", f"{quality_stats['average_quality']:.1f}")
+            q2.metric("Median Q", f"{quality_stats['median_quality']:.1f}")
+            total = quality_stats['total_bases']
+            q3.metric("Bases ≥ Q20", f"{quality_stats['q20_bases'] / total * 100:.1f}%" if total else "—")
+            q4.metric("Bases ≥ Q30", f"{quality_stats['q30_bases'] / total * 100:.1f}%" if total else "—")
+
+            quality_data = [
+                seq.letter_annotations['phred_quality']
+                for seq in sequences
+                if 'phred_quality' in seq.letter_annotations
+            ]
+            if quality_data:
+                fig = create_quality_plot(quality_data)
+                st.plotly_chart(fig, use_container_width=True)
 
 
 def render_sidebar():
@@ -291,38 +388,70 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.markdown("#### K-mer Analysis")
+        sidebar_section_header('kmer', 'K-mer Analysis')
         kmer_size = st.slider("K-mer size", min_value=2, max_value=10, value=3)
         run_kmer = st.button("Run K-mer Analysis")
-        
+
         st.markdown("---")
-        
-        st.markdown("#### ORF Detection")
-        min_orf_length = st.number_input("Minimum ORF length (bp)", 
+
+        sidebar_section_header('readingFrame', 'ORF Detection')
+        min_orf_length = st.number_input("Minimum ORF length (bp)",
                                           min_value=30, max_value=1000, value=100)
         include_reverse = st.checkbox("Include reverse complement", value=True)
         run_orf = st.button("Find ORFs")
-        
+
         st.markdown("---")
-        
-        st.markdown("#### Motif Search")
+
+        sidebar_section_header('motif', 'Motif Search')
         motif_pattern = st.text_input("Pattern (IUPAC)", placeholder="ATGR")
-        enzyme = st.selectbox("Or select enzyme", 
+        enzyme = st.selectbox("Or select enzyme",
                               ["Custom"] + list(get_enzyme_list().keys()))
         run_motif = st.button("Search Motif")
-        
+
         st.markdown("---")
-        
-        st.markdown("#### Export")
+
+        # Alignment is the one analysis that needs TWO sequences, so it gets its
+        # own pair of selectors rather than running over the loaded set.
+        sidebar_section_header('alignment', 'Pairwise Alignment')
+        records = st.session_state.sequences or []
+        labels = [f"{i + 1}. {r.id}" for i, r in enumerate(records)]
+
+        if len(records) < 2:
+            st.caption(
+                "Needs two sequences. Upload a FASTA containing at least two "
+                "records to enable alignment."
+            )
+            align_i = align_j = None
+            align_mode = "global"
+            run_align = False
+        else:
+            align_i = st.selectbox("Sequence A", labels, index=0, key="align_a")
+            align_j = st.selectbox("Sequence B", labels, index=1, key="align_b")
+            align_mode = st.radio(
+                "Mode",
+                ["global", "local"],
+                horizontal=True,
+                help=(
+                    "Global (Needleman-Wunsch) aligns the sequences end to end. "
+                    "Local (Smith-Waterman) finds the best-scoring subregion."
+                ),
+            )
+            run_align = st.button("Align Sequences")
+
+        st.markdown("---")
+
+        sidebar_section_header('sequenceFile', 'Export')
         export_format = st.selectbox("Format", ["CSV", "JSON", "ZIP"])
         run_export = st.button("Export Results")
-        
+
         return {
             'kmer': {'run': run_kmer, 'size': kmer_size},
-            'orf': {'run': run_orf, 'min_length': min_orf_length, 
+            'orf': {'run': run_orf, 'min_length': min_orf_length,
                     'reverse': include_reverse},
-            'motif': {'run': run_motif, 'pattern': motif_pattern, 
+            'motif': {'run': run_motif, 'pattern': motif_pattern,
                       'enzyme': enzyme},
+            'align': {'run': run_align, 'a': align_i, 'b': align_j,
+                      'mode': align_mode, 'labels': labels},
             'export': {'run': run_export, 'format': export_format}
         }
 
@@ -337,8 +466,12 @@ def run_kmer_analysis(size: int):
         analyzer = st.session_state.analyzer
         kmer_results = analyzer.analyze_kmers(sequences, k=size)
         
-        st.markdown(f"### {size}-mer Analysis")
-        
+        st.markdown(
+            section_header('kmer', f'{size}-mer Analysis',
+                           f'Frequency of every {size}-base window across the loaded sequence(s), top 20 shown.'),
+            unsafe_allow_html=True,
+        )
+
         col1, col2 = st.columns(2)
         with col1:
             st.metric("Total K-mers", f"{kmer_results['total_kmers']:,}")
@@ -362,8 +495,13 @@ def run_orf_analysis(min_length: int, include_reverse: bool):
                             include_reverse=include_reverse)
             all_orfs.extend(orfs)
         
-        st.markdown("### Open Reading Frames")
-        
+        reverse_note = " and its reverse complement" if include_reverse else ""
+        st.markdown(
+            section_header('readingFrame', 'Open Reading Frames',
+                           f'Start-to-stop spans of at least {min_length} bp across all 3 forward frames{reverse_note}.'),
+            unsafe_allow_html=True,
+        )
+
         if all_orfs:
             summary = get_orf_summary(all_orfs)
             
@@ -400,8 +538,57 @@ def run_motif_analysis(pattern: str, enzyme: str):
     with st.spinner("Searching for motif..."):
         matches = search_motif(sequences, pattern)
         
-        st.markdown(f"### Motif Search: {pattern}")
+        st.markdown(
+            section_header('motif', f'Motif Search: {pattern}',
+                           'IUPAC-ambiguous pattern match across the loaded sequence(s).'),
+            unsafe_allow_html=True,
+        )
         display_motif_results(matches)
+
+
+def run_alignment(label_a: str, label_b: str, labels: list, mode: str):
+    """Align two of the loaded sequences and display the result."""
+    records = st.session_state.sequences or []
+    if len(records) < 2:
+        st.warning("Alignment needs at least two sequences.")
+        return
+
+    try:
+        i, j = labels.index(label_a), labels.index(label_b)
+    except ValueError:
+        st.warning("Select two sequences to align.")
+        return
+
+    if i == j:
+        st.warning("Pick two different sequences — aligning a sequence to itself is trivially 100% identical.")
+        return
+
+    rec_a, rec_b = records[i], records[j]
+    with st.spinner("Aligning..."):
+        result = align_sequences(str(rec_a.seq), str(rec_b.seq), mode=mode)
+
+    st.markdown(section_header('alignment', 'Pairwise Alignment'), unsafe_allow_html=True)
+    st.caption(
+        f"{rec_a.id} ({len(rec_a.seq):,} bp) vs {rec_b.id} ({len(rec_b.seq):,} bp) · "
+        f"{mode} alignment (Biopython PairwiseAligner)"
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Identity", f"{result.identity:.1f}%",
+              help=f"{result.identity_count:,} of {result.alignment_length:,} aligned positions match")
+    c2.metric("Score", f"{result.score:,.1f}")
+    c3.metric("Gaps", f"{result.gaps:,}")
+    c4.metric("Aligned length", f"{result.alignment_length:,}")
+
+    # Monospace, fixed width: the match line only lines up in a mono font.
+    st.code(format_alignment_display(result), language=None)
+
+    st.download_button(
+        "Download alignment (.txt)",
+        data=format_alignment_display(result),
+        file_name=f"alignment_{rec_a.id}_vs_{rec_b.id}.txt".replace("/", "_"),
+        mime="text/plain",
+    )
 
 
 def run_export(format_type: str):
@@ -448,7 +635,7 @@ def render_footer():
     st.markdown(f"""
     <div style="text-align: center; padding: 1rem 0; color: {COLORS['text_secondary']};">
         <p style="margin: 0;">
-            Genome Sequencing Analyzer v1.0.0 | Built with Streamlit
+            GenomeSight v1.0.0
         </p>
         <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem;">
             Ardit Mishra
@@ -491,6 +678,14 @@ def main():
                     sidebar_options['motif']['enzyme']
                 )
             
+            if sidebar_options['align']['run']:
+                run_alignment(
+                    sidebar_options['align']['a'],
+                    sidebar_options['align']['b'],
+                    sidebar_options['align']['labels'],
+                    sidebar_options['align']['mode'],
+                )
+
             if sidebar_options['export']['run']:
                 run_export(sidebar_options['export']['format'])
     

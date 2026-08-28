@@ -3,12 +3,18 @@ headless = true
 address = "0.0.0.0"
 port = 5000
 
+# "Laboratory Instrument" — shared across the portfolio (GenomeSight,
+# BioStudio, PeptideMHC) so the tools read as one system rather than three
+# unrelated apps. Ground is a cool slate rather than pure black; the accent is
+# AlphaFold's high-confidence pLDDT blue, borrowed from this field's own
+# instruments instead of a generic brand colour.
 [theme]
-primaryColor = "#00C9A7"
-backgroundColor = "#1A1D29"
-secondaryBackgroundColor = "#25293C"
-textColor = "#E8EAED"
 base = "dark"
+primaryColor = "#6E9BFF"
+backgroundColor = "#11161D"
+secondaryBackgroundColor = "#171E27"
+textColor = "#E7ECF3"
+font = "sans serif"
 
 [browser]
 gatherUsageStats = false

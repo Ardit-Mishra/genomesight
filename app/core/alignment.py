@@ -117,20 +117,37 @@ def align_sequences(
 
 
 def _format_alignment(alignment) -> Tuple[str, str, str]:
-    """Format alignment object into displayable strings."""
+    """
+    Extract the two gapped, aligned rows from a Biopython Alignment.
+
+    Indexing the alignment (`alignment[0]`, `alignment[1]`) yields exactly the
+    aligned sequences, gaps included, and nothing else.
+
+    This previously parsed `alignment.format()` and took lines 0 and 2. From
+    Biopython 1.80 that output carries coordinate columns —
+
+        target            0 ATGCGTACGTTAGC 14
+                          0 ||||||.||||||| 14
+        query             0 ATGCGTTCGTTAGC 14
+
+    — so the labels and offsets were consumed as sequence characters. Every
+    downstream number was computed over that text: two 14 bp sequences differing
+    at one position reported 81.1% identity over a 37-position alignment instead
+    of 92.9% over 14.
+    """
     try:
-        aligned = alignment.format().split('\n')
-        
-        if len(aligned) >= 3:
-            aligned_seq1 = aligned[0] if aligned[0] else ""
-            aligned_seq2 = aligned[2] if len(aligned) > 2 else ""
-        else:
+        aligned_seq1 = str(alignment[0])
+        aligned_seq2 = str(alignment[1])
+    except Exception:  # pragma: no cover - defensive, older/odd Biopython
+        logger.warning("Could not index alignment rows; falling back to ungapped sequences")
+        try:
             aligned_seq1 = str(alignment.target)
             aligned_seq2 = str(alignment.query)
-    except:
-        aligned_seq1 = ""
-        aligned_seq2 = ""
-    
+        except Exception:
+            aligned_seq1 = ""
+            aligned_seq2 = ""
+
+
     match_line = []
     for a, b in zip(aligned_seq1, aligned_seq2):
         if a == b and a != '-':

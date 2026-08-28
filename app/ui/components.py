@@ -13,7 +13,8 @@ Components:
 
 import streamlit as st
 from typing import Dict, Any, List, Optional
-from .styles import COLORS, NUCLEOTIDE_COLORS, format_sequence_html
+from .styles import COLORS, NUCLEOTIDE_COLORS, FONT_MONO, format_sequence_html
+from .icons import icon, inline
 
 
 def display_sequence_card(
@@ -91,26 +92,94 @@ def file_uploader_section() -> None:
     """
     Display the styled file upload section header.
     """
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, {COLORS['surface']} 0%, #1E2330 100%); 
-                border: 2px dashed {COLORS['primary']}; 
-                border-radius: 12px; 
-                padding: 2.5rem; 
-                text-align: center; 
-                margin: 1.5rem 0;
-                box-shadow: 0 4px 6px rgba(0, 201, 167, 0.1);">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">🧬</div>
-        <h3 style="color: {COLORS['primary']}; margin: 0 0 0.5rem 0; font-size: 1.5rem;">
-            Upload Your Sequence Files
-        </h3>
-        <p style="color: {COLORS['text_secondary']}; margin: 0 0 1rem 0;">
-            Drag and drop files or click to browse
-        </p>
-        <p style="color: {COLORS['text_primary']}; font-size: 0.9rem;">
-            Supported: FASTA (.fasta, .fa) • FASTQ (.fastq, .fq)
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Was a 2.5rem gradient panel with a 2px dashed accent border, a teal glow
+    # and a 3rem DNA EMOJI over a 1.5rem accent heading — a drop zone shouting
+    # louder than the results it exists to produce, sitting directly above
+    # Streamlit's own uploader (so the page showed two drop zones in a row).
+    # Now a single label line; the real uploader beneath it does the work.
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.5rem 0;">
+            {icon('sequenceFile', 15, COLORS['text_secondary'])}
+            <span style="font-family: {FONT_MONO}; font-size: 0.68rem; letter-spacing: 0.12em;
+                         text-transform: uppercase; color: {COLORS['text_secondary']};">Sequence file</span>
+            <span style="font-size: 0.8rem; color: {COLORS['text_secondary']};">
+                FASTA (.fasta, .fa, .fna) &middot; FASTQ (.fastq, .fq)
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_empty_state() -> None:
+    """Teach the interface before any file is loaded.
+
+    Shown only pre-upload — ``main.py`` gates this on
+    ``st.session_state.sequences is None``. Once real results exist below,
+    repeating "here's what this tool does" under them would just be clutter,
+    so this panel disappears the moment a file (or the sample set) loads.
+    """
+    formats = "".join(
+        f'<div style="margin:.4rem 0">{inline("sequenceFile", text)}</div>'
+        for text in (
+            "FASTA — .fasta .fa .fna",
+            "FASTQ — .fastq .fq, includes per-base quality scores",
+        )
+    )
+    analyses = "".join(
+        f'<div style="margin:.4rem 0">{inline(name, text)}</div>'
+        for name, text in (
+            ("composition", "GC content & base composition"),
+            ("kmer", "k-mer frequency — sidebar, adjustable size"),
+            ("readingFrame", "Open reading frame detection — sidebar"),
+            ("motif", "Motif & restriction-site search — sidebar"),
+            ("alignment", "Pairwise alignment — needs 2+ sequences"),
+        )
+    )
+    st.markdown(
+        f"""
+        <div style="border: 1px solid {COLORS['border']}; border-radius: 6px;
+                    padding: 1.25rem 1.4rem; margin: 0 0 1.25rem 0;
+                    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                    gap: 1.5rem 2.5rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.6rem;">
+                    {icon('sequenceFile', 20, COLORS['text_primary'])}
+                    <span style="font-weight: 600; color: {COLORS['text_primary']};">Accepted formats</span>
+                </div>
+                {formats}
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.6rem;">
+                    {icon('ruler', 20, COLORS['text_primary'])}
+                    <span style="font-weight: 600; color: {COLORS['text_primary']};">Runs on upload</span>
+                </div>
+                {analyses}
+                <div style="margin-top: 0.7rem; font-size: 0.82rem; color: {COLORS['text_secondary']};">
+                    No file on hand? Use "Try Sample File" below to explore with
+                    real example sequences instead.
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def sidebar_section_header(name: str, title: str) -> None:
+    """A sidebar tool-group heading with its domain glyph.
+
+    Renders as a literal ``<h4>`` so it inherits the sidebar's mono,
+    uppercase, letter-spaced "instrument label" styling from ``styles.py`` —
+    a plain styled ``<span>`` would not pick up the
+    ``section[data-testid="stSidebar"] h4`` rule.
+    """
+    st.markdown(
+        f'<h4 style="display:flex;align-items:center;gap:.5rem;margin:1rem 0 .6rem 0">'
+        f'{icon(name, 15)}<span>{title}</span></h4>',
+        unsafe_allow_html=True,
+    )
 
 
 def display_orf_table(orfs: List) -> None:
@@ -165,21 +234,38 @@ def display_motif_results(matches: List) -> None:
 
 def display_stats_badges() -> None:
     """
-    Display quick stats badges in the header area.
+    Capability strip under the masthead.
+
+    Was three centred badges reading "10+ / Analysis Types", "2 / File Formats"
+    and a lightning EMOJI over "Instant Results". Problems, in order: "10+" is a
+    number nobody counted, "Instant Results" is marketing rather than a fact
+    about the tool, an emoji is not an icon, and centring them fought the
+    left-aligned masthead directly above.
+
+    Now: left-aligned, monospace, and every item is checkable — the analyses are
+    named, the formats are named, and "deterministic" is a property of the code
+    rather than a claim about speed.
     """
-    st.markdown(f"""
-    <div style="display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0; flex-wrap: wrap;">
-        <div style="text-align: center;">
-            <div style="color: {COLORS['primary']}; font-size: 1.5rem; font-weight: 600;">10+</div>
-            <div style="color: {COLORS['text_secondary']}; font-size: 0.85rem;">Analysis Types</div>
+    items = [
+        ("Analyses", "GC · composition · k-mer · ORF · motif · alignment"),
+        ("Formats", "FASTA · FASTQ"),
+        ("Output", "deterministic — same input, same result"),
+    ]
+    cells = "".join(
+        f"""
+        <div style="min-width: 0;">
+            <div style="font-family: {FONT_MONO}; font-size: 0.68rem; letter-spacing: 0.12em;
+                        text-transform: uppercase; color: {COLORS['text_secondary']};">{label}</div>
+            <div style="font-size: 0.9rem; color: {COLORS['text_primary']}; margin-top: 0.25rem;">{value}</div>
+        </div>"""
+        for label, value in items
+    )
+    st.markdown(
+        f"""
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 1.5rem 2.5rem; margin: 0 0 2rem 0; padding-bottom: 1.5rem;
+                    border-bottom: 1px solid {COLORS['border']};">{cells}
         </div>
-        <div style="text-align: center;">
-            <div style="color: {COLORS['primary']}; font-size: 1.5rem; font-weight: 600;">2</div>
-            <div style="color: {COLORS['text_secondary']}; font-size: 0.85rem;">File Formats</div>
-        </div>
-        <div style="text-align: center;">
-            <div style="color: {COLORS['primary']}; font-size: 1.5rem; font-weight: 600;">⚡</div>
-            <div style="color: {COLORS['text_secondary']}; font-size: 0.85rem;">Instant Results</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
