@@ -54,10 +54,21 @@ def get_dark_theme_css() -> str:
 
         /* Streamlit ships generated emotion classes whose specificity beats a
            plain element selector, so the UI face has to be declared !important
-           to land at all. The data face is re-asserted the same way below. */
+           to land at all. The data face is re-asserted the same way below.
+
+           stIconMaterial is excluded deliberately. Streamlit draws its own
+           icons — the sidebar collapse chevron, expander arrows — as Material
+           Symbols ligatures inside a <span>. Overriding font-family on every
+           span therefore stops the ligature resolving and the glyph renders as
+           its literal name: an expander labelled "keyboard_arrow_down". */
         html, body, .stApp, [data-testid="stAppViewContainer"], section[data-testid="stSidebar"],
-        h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, textarea {{
+        h1, h2, h3, h4, h5, h6, p, div, label, button, input, select, textarea,
+        span:not([data-testid="stIconMaterial"]) {{
             font-family: {FONT_UI} !important;
+        }}
+
+        [data-testid="stIconMaterial"] {{
+            font-family: "Material Symbols Rounded" !important;
         }}
 
         /* Left-aligned and restrained; the sequence is the subject, not the
