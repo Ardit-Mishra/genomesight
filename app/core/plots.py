@@ -184,10 +184,17 @@ def create_composition_plot(composition: Dict[str, int]) -> go.Figure:
         text=[f'{p:.1f}%' for p in percentages],
         textposition='outside'
     ))
-    
+
+    # Plotly's default autorange leaves just enough headroom for the bar
+    # itself, not for a text label sitting above it — on real data the
+    # tallest bar's "24.7%" label collided with the plot's top edge and
+    # rendered half-clipped. 15% of headroom above the tallest bar gives
+    # outside labels somewhere to sit.
+    max_pct = max(percentages) if percentages else 0
     fig.update_layout(
         title='Nucleotide Composition',
         xaxis_title='Nucleotide',
+        yaxis=dict(range=[0, max_pct * 1.15 if max_pct > 0 else 1]),
         yaxis_title='Percentage (%)',
         height=400,
         showlegend=False
@@ -220,10 +227,14 @@ def create_kmer_plot(kmer_counts: Dict[str, int], k: int) -> go.Figure:
         text=counts,
         textposition='outside'
     ))
-    
+
+    # Same headroom fix as create_composition_plot — an outside text label
+    # on the tallest bar otherwise collides with the plot's top edge.
+    max_count = max(counts) if counts else 0
     fig.update_layout(
         title=f'Top 20 {k}-mers by Frequency',
         xaxis_title=f'{k}-mer',
+        yaxis=dict(range=[0, max_count * 1.15 if max_count > 0 else 1]),
         yaxis_title='Count',
         height=400,
         xaxis_tickangle=-45
@@ -305,14 +316,22 @@ def create_length_distribution(lengths: List[int]) -> go.Figure:
         Plotly Figure object
     """
     fig = go.Figure()
-    
+
+    # nbinsx alone breaks down when every read is the same length (the
+    # common case for a fixed-cycle sequencer): with zero span to divide,
+    # Plotly still draws 30 bins and lands on a sub-1-bp bin size, so the
+    # single true value spreads across fractional bp ticks like "39.6" /
+    # "40.2" — precision the integer data never had. An explicit integer
+    # bin width, floored at 1 bp, keeps every bin a whole base pair.
+    span = max(lengths) - min(lengths) if lengths else 0
+    bin_size = max(1, round(span / 30)) if span > 0 else 1
     fig.add_trace(go.Histogram(
         x=lengths,
-        nbinsx=30,
+        xbins=dict(size=bin_size),
         marker_color=SERIES_COLOR,
         opacity=0.7
     ))
-    
+
     avg_len = np.mean(lengths)
     fig.add_vline(
         x=avg_len,
@@ -320,14 +339,21 @@ def create_length_distribution(lengths: List[int]) -> go.Figure:
         line_color=THRESHOLD_COLOR,
         annotation_text=f"Mean: {avg_len:.0f}"
     )
-    
+
     fig.update_layout(
         title='Sequence Length Distribution',
         xaxis_title='Sequence Length (bp)',
         yaxis_title='Count',
         height=400
     )
-    
+
+    if span == 0:
+        # A single-value dataset still gets autoranged tightly around that
+        # value, and Plotly then spaces ticks in fractions of the (tiny)
+        # visible span — "39.6", "40.2" bp. Pad the range and pin the tick
+        # step to 1 bp so the axis reads as the whole numbers it actually is.
+        fig.update_xaxes(range=[lengths[0] - 3, lengths[0] + 3], dtick=1)
+
     return apply_dark_theme(fig)
 
 
@@ -347,23 +373,47 @@ def create_orf_plot(orfs: List) -> go.Figure:
     fig = make_subplots(rows=1, cols=2,
                         subplot_titles=('ORF Length Distribution', 'ORFs by Frame'))
     
+    # Same fixed-bin-width fix as create_length_distribution: nbinsx alone
+    # produces fractional-bp bins when every ORF happens to be the same
+    # length, which is exactly the "min_length" default filtering can
+    # produce on a short, low-diversity input.
     lengths = [orf.length_nt for orf in orfs]
+    span = max(lengths) - min(lengths) if lengths else 0
+    bin_size = max(1, round(span / 20)) if span > 0 else 1
     fig.add_trace(
-        go.Histogram(x=lengths, nbinsx=20, marker_color=SERIES_COLOR),
+        go.Histogram(x=lengths, xbins=dict(size=bin_size), marker_color=SERIES_COLOR),
         row=1, col=1
     )
     
     frames = Counter([f"{orf.strand}{orf.frame}" for orf in orfs])
+    # Fixed, biologically ordered set of the six reading frames rather than
+    # whatever order Counter first saw them in — and only the frames that
+    # actually occur, so a forward-only run doesn't show three empty '-' bars.
+    frame_order = [f"{s}{f}" for s in ('+', '-') for f in (1, 2, 3)]
+    frame_labels = [f for f in frame_order if f in frames]
+    frame_values = [frames[f] for f in frame_labels]
     fig.add_trace(
-        go.Bar(x=list(frames.keys()), y=list(frames.values()),
+        go.Bar(x=frame_labels, y=frame_values,
                marker_color=SERIES_COLOR),
         row=1, col=2
     )
-    
+    # Labels like "+1" / "-1" parse as numbers, so Plotly's default axis-type
+    # inference plots them on a continuous number line — "+1" and "-1" land
+    # symmetrically around a "0" that doesn't correspond to any frame, and
+    # adjacent frames end up spaced apart by magnitude instead of shown as
+    # the six discrete bins they are. Force category so each frame is its
+    # own even bar.
+    fig.update_xaxes(type='category', row=1, col=2)
+    if span == 0:
+        # Same tight-autorange fractional-tick artifact as
+        # create_length_distribution, for the same reason: one bin, zero
+        # span, Plotly zooms in and ticks it in fractions of a base pair.
+        fig.update_xaxes(range=[lengths[0] - 3, lengths[0] + 3], dtick=1, row=1, col=1)
+
     fig.update_layout(
         title='ORF Analysis',
         height=400,
         showlegend=False
     )
-    
+
     return apply_dark_theme(fig)
