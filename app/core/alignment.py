@@ -37,6 +37,17 @@ class AlignmentResult:
     alignment_length: int
     gaps: int
     mode: str
+    #: Set only when the alignment did NOT run to completion. A failed
+    #: alignment and a genuine zero-similarity alignment previously produced
+    #: byte-identical results — 0.0% identity, score 0.0, 0 gaps — so a crashed
+    #: aligner was indistinguishable from a real finding about two unrelated
+    #: sequences. Callers MUST check this before presenting any other field.
+    error: Optional[str] = None
+
+    @property
+    def ok(self) -> bool:
+        """True when these numbers describe a real alignment."""
+        return self.error is None
 
 
 def align_sequences(
@@ -70,18 +81,25 @@ def align_sequences(
     seq1 = seq1.upper().replace(' ', '')
     seq2 = seq2.upper().replace(' ', '')
     
-    aligner = Align.PairwiseAligner()
-    aligner.mode = mode
-    aligner.match_score = match_score
-    aligner.mismatch_score = mismatch_score
-    aligner.open_gap_score = gap_open
-    aligner.extend_gap_score = gap_extend
-    
     try:
+        # Constructing and configuring the aligner sits INSIDE the try. It used
+        # to sit outside, so an unsupported mode string raised out of this
+        # function and took the whole page down, while an identical failure one
+        # line later returned a tidy error result. Same class of problem, two
+        # different outcomes, depending only on which line threw.
+        aligner = Align.PairwiseAligner()
+        aligner.mode = mode
+        aligner.match_score = match_score
+        aligner.mismatch_score = mismatch_score
+        aligner.open_gap_score = gap_open
+        aligner.extend_gap_score = gap_extend
+
         alignments = aligner.align(seq1, seq2)
         
         if not alignments:
-            return _empty_result(mode)
+            # Not a failure. Local alignment between two sequences with no
+            # common subsequence legitimately returns nothing.
+            return _empty_result(mode, error=None)
         
         best_alignment = alignments[0]
         score = best_alignment.score
@@ -112,8 +130,11 @@ def align_sequences(
         )
         
     except Exception as e:
+        # Logged AND returned. Logging alone put the failure somewhere only a
+        # server operator would look, while the caller got numbers it had no
+        # way to distinguish from a real result.
         logger.error(f"Alignment failed: {e}")
-        return _empty_result(mode)
+        return _empty_result(mode, f"{type(e).__name__}: {e}")
 
 
 def _format_alignment(alignment) -> Tuple[str, str, str]:
@@ -160,8 +181,23 @@ def _format_alignment(alignment) -> Tuple[str, str, str]:
     return aligned_seq1, aligned_seq2, ''.join(match_line)
 
 
-def _empty_result(mode: str) -> AlignmentResult:
-    """Return empty result when alignment fails."""
+def _empty_result(mode: str, error: Optional[str]) -> AlignmentResult:
+    """A result with no aligned columns.
+
+    There are THREE outcomes here, and the original code had only two names for
+    them:
+
+      1. a real alignment                      -> ok, alignment_length > 0
+      2. no alignment exists (e.g. no local
+         alignment between AAAAAAAA and
+         TTTTTTTT) -- a genuine finding        -> ok, alignment_length == 0
+      3. the aligner failed                    -> error is set
+
+    Cases 2 and 3 were previously identical, and collapsing them in either
+    direction is wrong: calling a real "no alignment" an error cries wolf, and
+    calling a crash a result is the silent failure this fix exists to remove.
+    `error` is therefore explicit at every call site, never defaulted.
+    """
     return AlignmentResult(
         score=0.0,
         aligned_seq1="",
@@ -171,7 +207,8 @@ def _empty_result(mode: str) -> AlignmentResult:
         identity_count=0,
         alignment_length=0,
         gaps=0,
-        mode=mode
+        mode=mode,
+        error=error,
     )
 
 

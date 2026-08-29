@@ -101,3 +101,31 @@ class TestDisplay:
     def test_calculate_identity_matches_alignment_identity(self):
         a, b = "ATGCGTACGTTAGC", "ATGCGTTCGTTAGC"
         assert calculate_identity(a, b) == pytest.approx(align_sequences(a, b).identity, abs=0.01)
+
+
+class TestFailureIsDistinguishableFromAResult:
+    """A failed alignment and a genuine zero-similarity alignment used to be
+    byte-identical: 0.0% identity, score 0.0, 0 gaps, empty strings. The UI
+    rendered both as four confident metrics, so a crashed aligner was
+    indistinguishable from a real finding about two unrelated sequences.
+    """
+
+    def test_successful_alignment_is_marked_ok_and_carries_no_error(self):
+        result = align_sequences("ATGCGTACGTTAGC", "ATGCGTTCGTTAGC")
+        assert result.ok is True
+        assert result.error is None
+
+    def test_failure_is_flagged_rather_than_returned_as_zero_identity(self):
+        # An unsupported mode raises inside Biopython. Before the fix this
+        # escaped the function entirely and took the page down with it.
+        result = align_sequences("ATGC", "ATGC", mode="not-a-real-mode")
+
+        assert result.ok is False
+        assert result.error is not None
+        assert "invalid mode" in result.error.lower()
+
+    def test_a_real_zero_similarity_result_is_not_flagged_as_an_error(self):
+        # The distinction only matters if genuine dissimilarity stays clean.
+        result = align_sequences("AAAAAAAA", "TTTTTTTT", mode="local")
+        assert result.ok is True
+        assert result.error is None

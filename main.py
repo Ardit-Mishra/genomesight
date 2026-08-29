@@ -573,6 +573,29 @@ def run_alignment(label_a: str, label_b: str, labels: list, mode: str):
         f"{mode} alignment (Biopython PairwiseAligner)"
     )
 
+    # A failed alignment used to render as "Identity 0.0% · Score 0.0 · Gaps 0",
+    # which is exactly what a real comparison of two unrelated sequences looks
+    # like. Report the failure instead of four numbers that describe nothing.
+    if not result.ok:
+        st.error(
+            f"**The alignment did not run, so there are no results to show.**\n\n"
+            f"Reason: {result.error}\n\n"
+            f"This is a failure, not a finding — it does not mean the two "
+            f"sequences are dissimilar."
+        )
+        return
+
+    # Distinct from the failure above: the aligner ran and found nothing. That
+    # is a real answer about these two sequences, so say so rather than
+    # printing 0.0% across four metrics as though it were a measurement.
+    if result.alignment_length == 0:
+        st.info(
+            f"**No {mode} alignment exists between these two sequences.**\n\n"
+            f"The aligner ran successfully and found no alignable region — "
+            f"this is a result, not an error."
+        )
+        return
+
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Identity", f"{result.identity:.1f}%",
               help=f"{result.identity_count:,} of {result.alignment_length:,} aligned positions match")
