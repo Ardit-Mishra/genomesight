@@ -12,6 +12,7 @@ GenomeSight is an interactive genome sequence analysis toolkit implemented in Py
 - **Sequence Statistics**: Calculate GC content, nucleotide composition, and sequence complexity
 - **K-mer Analysis**: Frequency analysis of subsequences (configurable k-mer size)
 - **ORF Detection**: Find Open Reading Frames with customizable minimum length
+- **Codon Usage**: Per-ORF and whole-sequence codon counts with relative synonymous codon usage (RSCU)
 - **Motif Search**: Pattern matching with IUPAC ambiguity code support
 - **Restriction Sites**: Search for common restriction enzyme recognition sequences
 - **Quality Analysis**: FASTQ quality score visualization and statistics
@@ -49,7 +50,7 @@ The application will be available at `http://localhost:5000`
 
 ### Basic Analysis
 
-1. **Upload a sequence file** (FASTA or FASTQ format)
+1. **Upload a sequence file** (FASTA, FASTQ, or GenBank format)
 2. View automatic analysis results including:
    - Sequence count and total length
    - Average GC content
@@ -62,6 +63,7 @@ Use the sidebar to access additional tools:
 
 - **K-mer Analysis**: Set k-mer size (2-10) and analyze frequency patterns
 - **ORF Detection**: Find protein-coding regions with adjustable minimum length
+- **Codon Usage**: Codon counts and RSCU, both per detected ORF (aggregated) and for the raw uploaded sequence
 - **Motif Search**: Enter IUPAC patterns or select restriction enzymes
 
 ### Supported File Formats
@@ -70,6 +72,7 @@ Use the sidebar to access additional tools:
 |--------|------------|-------------|
 | FASTA | `.fasta`, `.fa`, `.fna` | Standard sequence format |
 | FASTQ | `.fastq`, `.fq` | Sequences with quality scores |
+| GenBank | `.gb`, `.gbk`, `.genbank` | Sequence plus structured feature annotations (source, CDS, gene, etc.) |
 
 ### Example
 

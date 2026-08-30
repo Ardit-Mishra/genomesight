@@ -104,7 +104,7 @@ def file_uploader_section() -> None:
             <span style="font-family: {FONT_MONO}; font-size: 0.68rem; letter-spacing: 0.12em;
                          text-transform: uppercase; color: {COLORS['text_secondary']};">Sequence file</span>
             <span style="font-size: 0.8rem; color: {COLORS['text_secondary']};">
-                FASTA (.fasta, .fa, .fna) &middot; FASTQ (.fastq, .fq)
+                FASTA (.fasta, .fa, .fna) &middot; FASTQ (.fastq, .fq) &middot; GenBank (.gb, .gbk, .genbank)
             </span>
         </div>
         """,
@@ -125,6 +125,7 @@ def render_empty_state() -> None:
         for text in (
             "FASTA — .fasta .fa .fna",
             "FASTQ — .fastq .fq, includes per-base quality scores",
+            "GenBank — .gb .gbk .genbank, includes feature annotations",
         )
     )
     analyses = "".join(
@@ -133,6 +134,7 @@ def render_empty_state() -> None:
             ("composition", "GC content & base composition"),
             ("kmer", "k-mer frequency — sidebar, adjustable size"),
             ("readingFrame", "Open reading frame detection — sidebar"),
+            ("readingFrame", "Codon usage tables & RSCU — sidebar"),
             ("motif", "Motif & restriction-site search — sidebar"),
             ("alignment", "Pairwise alignment — needs 2+ sequences"),
         )
@@ -247,8 +249,8 @@ def display_stats_badges() -> None:
     rather than a claim about speed.
     """
     items = [
-        ("Analyses", "GC · composition · k-mer · ORF · motif · alignment"),
-        ("Formats", "FASTA · FASTQ"),
+        ("Analyses", "GC · composition · k-mer · ORF · codon usage · motif · alignment"),
+        ("Formats", "FASTA · FASTQ · GenBank"),
         ("Output", "deterministic — same input, same result"),
     ]
     cells = "".join(

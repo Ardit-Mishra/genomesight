@@ -28,11 +28,12 @@ from io import StringIO
 from datetime import datetime
 
 from app.core.sequence_analyzer import SequenceAnalyzer
-from app.core.io_fasta import parse_sequences, detect_format
+from app.core.io_fasta import parse_sequences, detect_format, extract_genbank_features
 from app.core.validation import validate_sequences
 from app.core.orf import find_orfs, get_orf_summary
 from app.core.motifs import search_motif, get_enzyme_list
 from app.core.alignment import align_sequences, format_alignment_display
+from app.core.codons import count_codons, codon_usage_for_orf, merge_codon_usage, get_codon_table_rows
 from app.core.plots import (
     create_gc_plot,
     create_gc_sliding_window,
@@ -158,6 +159,7 @@ def render_info_tabs():
             for name, text in (
                 ("kmer", "K-mer frequency analysis"),
                 ("readingFrame", "Open reading frame (ORF) detection"),
+                ("readingFrame", "Codon usage tables — per-ORF and whole-sequence, with RSCU"),
                 ("motif", "Motif & restriction-site search (IUPAC patterns)"),
                 ("alignment", "Pairwise alignment — global (Needleman-Wunsch) or local (Smith-Waterman)"),
             ):
@@ -205,6 +207,17 @@ def render_info_tabs():
         ATGCATGCATGCATGC
         ```
         """)
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">'
+            f'{icon("sequenceFile", 16, COLORS["text_primary"])}<strong>GenBank Format</strong></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("""
+        - Extension: `.gb`, `.gbk`, `.genbank`
+        - Sequence plus structured feature annotations (source, CDS, gene,
+          etc.) — parsed via Biopython, features preserved
+        - A file can hold multiple `LOCUS` records back to back
+        """)
     
     with cases_tab:
         st.markdown("""
@@ -237,7 +250,7 @@ def render_upload_section():
     with col1:
         uploaded_file = st.file_uploader(
             "Choose a sequence file",
-            type=['fasta', 'fa', 'fna', 'fastq', 'fq'],
+            type=['fasta', 'fa', 'fna', 'fastq', 'fq', 'gb', 'gbk', 'genbank'],
             label_visibility="collapsed"
         )
     
@@ -380,6 +393,46 @@ def render_basic_stats(results: dict):
                 fig = create_quality_plot(quality_data)
                 st.plotly_chart(fig, use_container_width=True)
 
+    # Feature annotations only exist for GenBank input — Biopython attaches
+    # `.features` only when parsing that format, so FASTA/FASTQ have nothing
+    # to show here and this section stays hidden for them.
+    if results.get('format') == 'genbank':
+        render_genbank_features(sequences)
+
+
+def render_genbank_features(sequences: list) -> None:
+    """Render the feature annotations carried by parsed GenBank records."""
+    rows = []
+    for seq in sequences[:10]:
+        for feature in extract_genbank_features(seq):
+            qualifiers = feature['qualifiers']
+            label = (qualifiers.get('gene') or qualifiers.get('product') or [''])[0]
+            rows.append({
+                'Sequence': seq.id,
+                'Type': feature['type'],
+                'Start': feature['start'],
+                'End': feature['end'],
+                'Strand': feature['strand'] or '',
+                'Gene / Product': label,
+            })
+
+    st.markdown(
+        section_header(
+            'sequenceFile', 'GenBank Feature Annotations',
+            'Features (source, CDS, gene, etc.) as recorded in the uploaded GenBank file — not computed.'
+        ),
+        unsafe_allow_html=True,
+    )
+
+    if not rows:
+        st.info("This GenBank file has no FEATURES entries to show.")
+        return
+
+    import pandas as pd
+    st.dataframe(pd.DataFrame(rows[:200]), use_container_width=True, hide_index=True)
+    if len(rows) > 200:
+        st.caption(f"Showing first 200 of {len(rows)} features.")
+
 
 def render_sidebar():
     """Render the sidebar with analysis options."""
@@ -399,6 +452,15 @@ def render_sidebar():
                                           min_value=30, max_value=1000, value=100)
         include_reverse = st.checkbox("Include reverse complement", value=True)
         run_orf = st.button("Find ORFs")
+
+        st.markdown("---")
+
+        # Reuses the ORF Detection settings above rather than duplicating a
+        # second min-length/reverse-complement control: the per-ORF codon
+        # table is built from exactly the ORFs those settings would find.
+        sidebar_section_header('readingFrame', 'Codon Usage')
+        st.caption("Uses the ORF Detection settings above to find ORFs.")
+        run_codon = st.button("Analyze Codon Usage")
 
         st.markdown("---")
 
@@ -448,6 +510,8 @@ def render_sidebar():
             'kmer': {'run': run_kmer, 'size': kmer_size},
             'orf': {'run': run_orf, 'min_length': min_orf_length,
                     'reverse': include_reverse},
+            'codon': {'run': run_codon, 'min_length': min_orf_length,
+                      'reverse': include_reverse},
             'motif': {'run': run_motif, 'pattern': motif_pattern,
                       'enzyme': enzyme},
             'align': {'run': run_align, 'a': align_i, 'b': align_j,
@@ -519,6 +583,88 @@ def run_orf_analysis(min_length: int, include_reverse: bool):
             display_orf_table(all_orfs)
         else:
             st.info("No ORFs found with the specified parameters")
+
+
+def _render_codon_table(usage) -> None:
+    """Render one CodonUsageResult as a table, showing only codons whose
+    amino-acid family was actually observed. Rows for codons that were never
+    used within an observed family show a real 0 count and RSCU=0.0 (that's
+    data); families with zero observations are omitted entirely rather than
+    padded with a fabricated 0 (that would look like data but isn't)."""
+    import pandas as pd
+
+    rows = [r for r in get_codon_table_rows(usage) if r['fraction_of_aa_pct'] is not None]
+
+    if not rows:
+        st.info("No standard-base codons were counted for this table.")
+    else:
+        df = pd.DataFrame(rows).rename(columns={
+            'codon': 'Codon', 'amino_acid': 'AA', 'count': 'Count',
+            'fraction_of_aa_pct': '% of AA', 'rscu': 'RSCU',
+        })
+        df['% of AA'] = df['% of AA'].round(1)
+        df['RSCU'] = df['RSCU'].round(2)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # Ambiguous and trailing-partial codons are never folded into the table
+    # above or silently dropped — always state the count, even when it's 0.
+    st.caption(
+        f"{usage.counted_codons:,} standard codons counted &middot; "
+        f"{usage.ambiguous_codons:,} ambiguous (non-ACGT) &middot; "
+        f"{usage.partial_trailing_bases:,} trailing base(s) outside a full codon."
+    )
+
+
+def run_codon_usage_analysis(min_length: int, include_reverse: bool):
+    """Run codon usage analysis and display per-ORF and whole-sequence tables."""
+    sequences = st.session_state.sequences
+    if not sequences:
+        return
+
+    with st.spinner("Counting codons..."):
+        analyzed = sequences[:10]
+
+        # Whole sequence: a raw frame-1 tally of the sequence as uploaded,
+        # not filtered to coding regions.
+        whole_seq_usage = merge_codon_usage(
+            [count_codons(str(seq.seq), frame=0) for seq in analyzed]
+        )
+
+        # Per-ORF: every ORF the current ORF Detection settings find across
+        # the same sequences, each counted from its own start codon, then
+        # aggregated into one table.
+        all_orfs = []
+        for seq in analyzed:
+            all_orfs.extend(find_orfs(
+                str(seq.seq), min_length=min_length, include_reverse=include_reverse
+            ))
+        orf_usage = merge_codon_usage([codon_usage_for_orf(orf) for orf in all_orfs]) if all_orfs else None
+
+        st.markdown(
+            section_header(
+                'readingFrame', 'Codon Usage',
+                'Codon counts and relative synonymous codon usage (RSCU) — '
+                'RSCU=1.0 is even use across an amino acid\'s synonymous codons, '
+                '>1.0 favored, <1.0 avoided.'
+            ),
+            unsafe_allow_html=True,
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Whole sequence** &middot; {len(analyzed)} sequence(s), frame 1")
+            _render_codon_table(whole_seq_usage)
+        with col2:
+            if orf_usage is not None:
+                st.markdown(f"**Detected ORFs** &middot; aggregate over {len(all_orfs)} ORF(s)")
+                _render_codon_table(orf_usage)
+            else:
+                st.markdown("**Detected ORFs**")
+                st.info(
+                    f"No ORFs found at the current ORF Detection minimum "
+                    f"length ({min_length} bp), so there is no per-ORF codon "
+                    f"table. The whole-sequence tally is unaffected."
+                )
 
 
 def run_motif_analysis(pattern: str, enzyme: str):
@@ -694,7 +840,13 @@ def main():
                     sidebar_options['orf']['min_length'],
                     sidebar_options['orf']['reverse']
                 )
-            
+
+            if sidebar_options['codon']['run']:
+                run_codon_usage_analysis(
+                    sidebar_options['codon']['min_length'],
+                    sidebar_options['codon']['reverse']
+                )
+
             if sidebar_options['motif']['run']:
                 run_motif_analysis(
                     sidebar_options['motif']['pattern'],

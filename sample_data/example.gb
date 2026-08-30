@@ -1,0 +1,13 @@
+LOCUS       demo_seq                  91 bp    DNA     linear   UNK 01-JAN-2024
+DEFINITION  demo genbank record for smoke testing.
+ACCESSION   demo_seq
+FEATURES             Location/Qualifiers
+     source          1..91
+                     /organism="synthetic organism"
+     CDS             1..91
+                     /gene="demoGene"
+                     /product="demo protein"
+ORIGIN
+        1 atggcgtacg ttagcatgcg tacgttagca tgcgtacgtt agcatgcgta cgttagcatg
+       61 cgtacgttag catgcgtacg ttagcatgtg a
+//

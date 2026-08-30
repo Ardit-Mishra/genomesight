@@ -1,20 +1,25 @@
 """
-FASTA/FASTQ File I/O Module
+FASTA/FASTQ/GenBank File I/O Module
 
-This module handles parsing and exporting of sequence files in FASTA and FASTQ formats.
-It provides robust file format detection, validation, and conversion utilities.
+This module handles parsing and exporting of sequence files in FASTA, FASTQ,
+and GenBank formats. It provides robust file format detection, validation,
+and conversion utilities.
 
 Design Notes:
     - Uses Biopython SeqIO for reliable parsing
     - Handles multi-line FASTA sequences correctly
     - Supports both file objects and string content
     - Includes quality score handling for FASTQ
+    - GenBank records keep their `.features` (Bio.SeqFeature) list intact;
+      extract_genbank_features() flattens the ones that matter for display
 
 Functions:
     parse_fasta: Parse FASTA format files
-    parse_fastq: Parse FASTQ format files  
+    parse_fastq: Parse FASTQ format files
+    parse_genbank: Parse GenBank format files, including feature annotations
     detect_format: Auto-detect file format
     export_to_fasta: Export sequences to FASTA format
+    extract_genbank_features: Flatten a GenBank record's features for display
 """
 
 from Bio import SeqIO
@@ -30,37 +35,44 @@ logger = logging.getLogger(__name__)
 def detect_format(content: str, filename: str = "") -> Optional[str]:
     """
     Detect the format of sequence file content.
-    
+
     Uses both file extension and content inspection to determine format.
     Content-based detection takes precedence for reliability.
-    
+
     Args:
         content: File content as string
         filename: Optional filename for extension-based hints
-    
+
     Returns:
-        Format string ('fasta' or 'fastq'), or None if unrecognized
-    
+        Format string ('fasta', 'fastq', or 'genbank'), or None if unrecognized
+
     Example:
         >>> detect_format(">seq1\\nATGC", "test.fasta")
         'fasta'
     """
     content = content.strip()
-    
+
     if content.startswith('>'):
         return 'fasta'
-    
+
     if content.startswith('@'):
         lines = content.split('\n')
         if len(lines) >= 4 and lines[2].startswith('+'):
             return 'fastq'
-    
+
+    # A GenBank flat file's first line always starts with the LOCUS keyword —
+    # check content before falling back to the filename extension.
+    if content[:5].upper() == 'LOCUS':
+        return 'genbank'
+
     ext = filename.lower()
     if ext.endswith(('.fasta', '.fa', '.fna', '.ffn', '.faa')):
         return 'fasta'
     if ext.endswith(('.fastq', '.fq')):
         return 'fastq'
-    
+    if ext.endswith(('.gb', '.gbk', '.genbank')):
+        return 'genbank'
+
     return None
 
 
@@ -129,27 +141,101 @@ def parse_fastq(content: str) -> List[SeqRecord]:
         raise ValueError(f"Failed to parse FASTQ: {e}")
 
 
+def parse_genbank(content: str) -> List[SeqRecord]:
+    """
+    Parse GenBank format content into sequence records.
+
+    GenBank records carry structured feature annotations (genes, CDS,
+    regulatory regions, etc.) in addition to the raw sequence. Biopython
+    attaches these to each record's `.features` list — this function does
+    not drop or flatten them; use `extract_genbank_features` for a
+    display-ready view of a record's features.
+
+    Args:
+        content: GenBank formatted string content (one LOCUS entry or many)
+
+    Returns:
+        List of Bio.SeqRecord objects, each with `.features` populated
+
+    Raises:
+        ValueError: If content is not valid GenBank format
+    """
+    if content.strip()[:5].upper() != 'LOCUS':
+        raise ValueError("Invalid GenBank format: must start with 'LOCUS'")
+
+    try:
+        handle = StringIO(content)
+        records = list(SeqIO.parse(handle, 'genbank'))
+        if not records:
+            raise ValueError("No LOCUS records parsed from GenBank content")
+        logger.info(f"Parsed {len(records)} sequences from GenBank")
+        return records
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.error(f"GenBank parsing error: {e}")
+        raise ValueError(f"Failed to parse GenBank: {e}")
+
+
+def extract_genbank_features(record: SeqRecord) -> List[Dict[str, Any]]:
+    """
+    Flatten a GenBank record's features into plain dicts for display.
+
+    Args:
+        record: A Bio.SeqRecord parsed from GenBank content. Records from
+            FASTA/FASTQ have no `.features`, so those return an empty list —
+            not an error, since "no feature annotations" is a legitimate
+            state for non-GenBank input.
+
+    Returns:
+        List of dicts, one per feature, with keys: type, start (1-based),
+        end, strand ('+', '-', or None if unspecified), and qualifiers
+        (the feature's raw qualifier dict, e.g. gene/product/note).
+    """
+    features = getattr(record, 'features', None)
+    if not features:
+        return []
+
+    strand_symbol = {1: '+', -1: '-', 0: None, None: None}
+
+    flattened = []
+    for feature in features:
+        location = feature.location
+        flattened.append({
+            'type': feature.type,
+            'start': int(location.start) + 1,
+            'end': int(location.end),
+            'strand': strand_symbol.get(location.strand, None),
+            'qualifiers': {k: v for k, v in feature.qualifiers.items()},
+        })
+
+    return flattened
+
+
 def parse_sequences(content: str, filename: str = "") -> Tuple[List[SeqRecord], str]:
     """
     Parse sequence content with automatic format detection.
-    
+
     Args:
         content: File content as string
         filename: Optional filename for format hints
-    
+
     Returns:
-        Tuple of (list of SeqRecords, format string)
-    
+        Tuple of (list of SeqRecords, format string — 'fasta', 'fastq', or
+        'genbank')
+
     Raises:
         ValueError: If format cannot be detected or parsing fails
     """
     file_format = detect_format(content, filename)
-    
+
     if file_format is None:
         raise ValueError("Could not detect file format")
-    
+
     if file_format == 'fasta':
         return parse_fasta(content), 'fasta'
+    elif file_format == 'genbank':
+        return parse_genbank(content), 'genbank'
     else:
         return parse_fastq(content), 'fastq'
 
