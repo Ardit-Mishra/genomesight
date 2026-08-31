@@ -31,6 +31,11 @@ from Cython.Build import cythonize
 
 setup(
     name="genomesight-kmer-accel",
+    # `packages=[]` is load-bearing: without it setuptools' flat-layout auto-discovery sees
+    # app/, assets/ and sample_data/ at the repo root, decides the project has multiple
+    # top-level packages, and refuses to build at all. We are building exactly one extension
+    # module in place -- there is no distribution to package.
+    packages=[],
     ext_modules=cythonize(
         "app/core/_kmer_accel.pyx",
         compiler_directives={"language_level": "3"},

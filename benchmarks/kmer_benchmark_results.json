@@ -2,153 +2,213 @@
   "environment": {
     "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
     "platform": "Windows-11-10.0.26200-SP0",
-    "native_available": false,
-    "native_import_error": "cannot import name '_kmer_accel' from partially initialized module 'app.core' (most likely due to a circular import) (C:\\Users\\ardit\\Downloads\\live-projects\\GenomeSight\\app\\core\\__init__.py)"
+    "native_available": true,
+    "native_import_error": ""
   },
   "runs": [
     {
       "sequence_length": 1000,
       "k": 4,
       "python": {
-        "seconds_min": 0.0014462000108323991,
-        "seconds_mean": 0.001522000001083749,
+        "seconds_min": 0.0008610000077169389,
+        "seconds_mean": 0.0008849000053790709,
         "repeats": 3,
         "result_unique_kmers": 245
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.00012250000145286322,
+        "seconds_mean": 0.0001514999991438041,
+        "repeats": 3,
+        "result_unique_kmers": 245
+      },
+      "speedup_x": 7.028571408207233
     },
     {
       "sequence_length": 1000,
       "k": 8,
       "python": {
-        "seconds_min": 0.002058400001260452,
-        "seconds_mean": 0.0023155666664630794,
+        "seconds_min": 0.0010681999992812052,
+        "seconds_mean": 0.0010845333308679983,
         "repeats": 3,
         "result_unique_kmers": 989
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.0001151999895228073,
+        "seconds_mean": 0.00011593332844010244,
+        "repeats": 3,
+        "result_unique_kmers": 989
+      },
+      "speedup_x": 9.272570281525269
     },
     {
       "sequence_length": 1000,
       "k": 12,
       "python": {
-        "seconds_min": 0.002652800001669675,
-        "seconds_mean": 0.0027579999975084015,
+        "seconds_min": 0.0012183999933768064,
+        "seconds_mean": 0.0013136666627057518,
         "repeats": 3,
         "result_unique_kmers": 989
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.00011809999705292284,
+        "seconds_mean": 0.00012303332914598286,
+        "repeats": 3,
+        "result_unique_kmers": 989
+      },
+      "speedup_x": 10.316680980362923
     },
     {
       "sequence_length": 10000,
       "k": 4,
       "python": {
-        "seconds_min": 0.015680999989854172,
-        "seconds_mean": 0.016240966661522787,
+        "seconds_min": 0.007545100001152605,
+        "seconds_mean": 0.008044866660687452,
         "repeats": 3,
         "result_unique_kmers": 256
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.001248100001248531,
+        "seconds_mean": 0.0013568666715097304,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "speedup_x": 6.045268803465186
     },
     {
       "sequence_length": 10000,
       "k": 8,
       "python": {
-        "seconds_min": 0.022269900000537746,
-        "seconds_mean": 0.02305139999468035,
+        "seconds_min": 0.010929700001724996,
+        "seconds_mean": 0.011184633331140503,
         "repeats": 3,
         "result_unique_kmers": 9195
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.0011975999950664118,
+        "seconds_mean": 0.001263833328266628,
+        "repeats": 3,
+        "result_unique_kmers": 9195
+      },
+      "speedup_x": 9.126336044380912
     },
     {
       "sequence_length": 10000,
       "k": 12,
       "python": {
-        "seconds_min": 0.027403300002333708,
-        "seconds_mean": 0.028640033332825016,
+        "seconds_min": 0.012781899989931844,
+        "seconds_mean": 0.013238199996218706,
         "repeats": 3,
         "result_unique_kmers": 9987
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.0011652999965008348,
+        "seconds_mean": 0.0011749666640146945,
+        "repeats": 3,
+        "result_unique_kmers": 9987
+      },
+      "speedup_x": 10.968763432861374
     },
     {
       "sequence_length": 100000,
       "k": 4,
       "python": {
-        "seconds_min": 0.14408519999415148,
-        "seconds_mean": 0.14755246666512298,
+        "seconds_min": 0.07669539999915287,
+        "seconds_mean": 0.08000960000693642,
         "repeats": 3,
         "result_unique_kmers": 256
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.012602300004800782,
+        "seconds_mean": 0.014242866668306911,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "speedup_x": 6.085825600877312
     },
     {
       "sequence_length": 100000,
       "k": 8,
       "python": {
-        "seconds_min": 0.2519451999978628,
-        "seconds_mean": 0.262050599999687,
+        "seconds_min": 0.1314321999961976,
+        "seconds_mean": 0.13353300000017043,
         "repeats": 3,
         "result_unique_kmers": 51149
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.016978500003460795,
+        "seconds_mean": 0.018734866665909067,
+        "repeats": 3,
+        "result_unique_kmers": 51149
+      },
+      "speedup_x": 7.741096090314648
     },
     {
       "sequence_length": 100000,
       "k": 12,
       "python": {
-        "seconds_min": 0.31443969999963883,
-        "seconds_mean": 0.3178806666692253,
+        "seconds_min": 0.3073595000023488,
+        "seconds_mean": 0.3314191000002514,
         "repeats": 3,
         "result_unique_kmers": 99699
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.05171909999626223,
+        "seconds_mean": 0.055717366665097266,
+        "repeats": 3,
+        "result_unique_kmers": 99699
+      },
+      "speedup_x": 5.942862501949219
     },
     {
       "sequence_length": 500000,
       "k": 4,
       "python": {
-        "seconds_min": 0.7619782999972813,
-        "seconds_mean": 0.7795282666678153,
+        "seconds_min": 0.6340090000012424,
+        "seconds_mean": 0.6618633333321972,
         "repeats": 3,
         "result_unique_kmers": 256
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.10388439999951515,
+        "seconds_mean": 0.11828673333608701,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "speedup_x": 6.103024130708763
     },
     {
       "sequence_length": 500000,
       "k": 8,
       "python": {
-        "seconds_min": 1.3092395999992732,
-        "seconds_mean": 1.3230882333300542,
+        "seconds_min": 1.1803692000103183,
+        "seconds_mean": 1.3126494666697301,
         "repeats": 3,
         "result_unique_kmers": 65500
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.3031748999928823,
+        "seconds_mean": 0.3679330999972687,
+        "repeats": 3,
+        "result_unique_kmers": 65500
+      },
+      "speedup_x": 3.8933605652645724
     },
     {
       "sequence_length": 500000,
       "k": 12,
       "python": {
-        "seconds_min": 1.6315420999890193,
-        "seconds_mean": 1.6423546666628681,
+        "seconds_min": 1.3237058000086108,
+        "seconds_mean": 1.6328938666702015,
         "repeats": 3,
         "result_unique_kmers": 492674
       },
-      "native": null,
-      "speedup_x": null
+      "native": {
+        "seconds_min": 0.3431734000041615,
+        "seconds_mean": 0.35080219999751233,
+        "repeats": 3,
+        "result_unique_kmers": 492674
+      },
+      "speedup_x": 3.8572505910789086
     }
   ]
 }
