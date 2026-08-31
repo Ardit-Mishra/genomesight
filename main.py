@@ -536,6 +536,14 @@ def run_kmer_analysis(size: int):
             unsafe_allow_html=True,
         )
 
+        if kmer_results.get('backend') == 'native':
+            st.caption("Native (Cython) k-mer accelerator active.")
+        else:
+            st.caption(
+                "Native accelerator not built — using the Python k-mer counter. "
+                "Results are identical either way; see README for the optional build step."
+            )
+
         col1, col2 = st.columns(2)
         with col1:
             st.metric("Total K-mers", f"{kmer_results['total_kmers']:,}")

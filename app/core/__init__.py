@@ -13,6 +13,8 @@ Modules:
     - alignment: Pairwise sequence alignment
     - plots: Plotly visualization generators
     - export: Report generation and export utilities
+    - kmer_native: Optional Cython-accelerated k-mer counting with an
+      always-available pure-Python fallback (see that module's docstring)
 """
 
 from .sequence_analyzer import SequenceAnalyzer
@@ -26,3 +28,4 @@ from .plots import (
     create_kmer_plot,
     create_quality_plot
 )
+from . import kmer_native

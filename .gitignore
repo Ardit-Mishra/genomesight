@@ -87,3 +87,9 @@ temp/
 *.manifest
 *.spec
 *.so
+
+# Compiled native k-mer accelerator (build_kmer_ext.py) -- optional,
+# platform-specific, never committed; app/core/kmer_native.py falls back
+# to pure Python when this isn't present.
+app/core/_kmer_accel*.pyd
+app/core/_kmer_accel*.c

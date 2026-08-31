@@ -10,7 +10,7 @@ GenomeSight is an interactive genome sequence analysis toolkit implemented in Py
 ## Features
 
 - **Sequence Statistics**: Calculate GC content, nucleotide composition, and sequence complexity
-- **K-mer Analysis**: Frequency analysis of subsequences (configurable k-mer size)
+- **K-mer Analysis**: Frequency analysis of subsequences (configurable k-mer size), with an optional native (Cython) counting accelerator for large genomes — see [Native k-mer accelerator](#native-k-mer-accelerator)
 - **ORF Detection**: Find Open Reading Frames with customizable minimum length
 - **Codon Usage**: Per-ORF and whole-sequence codon counts with relative synonymous codon usage (RSCU)
 - **Motif Search**: Pattern matching with IUPAC ambiguity code support
@@ -100,6 +100,8 @@ genomesight/
 ├── app/
 │   ├── core/                   # Core analysis modules (standalone library)
 │   │   ├── sequence_analyzer.py    # GC content, composition, k-mers
+│   │   ├── kmer_native.py          # K-mer counting dispatcher (native/Python)
+│   │   ├── _kmer_accel.pyx         # Optional Cython k-mer accelerator source
 │   │   ├── io_fasta.py             # FASTA/FASTQ parsing
 │   │   ├── validation.py           # Sequence validation
 │   │   ├── orf.py                  # ORF detection
@@ -110,6 +112,8 @@ genomesight/
 │   └── ui/                     # Streamlit UI components
 │       ├── components.py           # Reusable widgets
 │       └── styles.py               # CSS theming
+├── benchmarks/                     # Native vs Python k-mer timing script + results
+├── build_kmer_ext.py               # Optional: compiles the Cython k-mer accelerator
 ├── .streamlit/                     # Streamlit configuration
 ├── docs/                           # Documentation and GitHub instructions
 ├── tests/                          # Unit tests
@@ -137,8 +141,11 @@ comp = analyzer.calculate_nucleotide_composition("ATGC")
 # Reverse Complement
 rc = analyzer.reverse_complement("ATGC")  # "GCAT"
 
-# K-mer Analysis
+# K-mer Analysis -- uses the native accelerator when it's built, otherwise
+# an equivalent pure-Python counter; either way the result includes which
+# backend actually ran.
 kmers = analyzer.analyze_kmers(sequences, k=3)
+kmers['backend']  # "native" or "python"
 ```
 
 ### ORF Detection
@@ -167,6 +174,77 @@ matches = search_motif(sequences, pattern="ATGR")  # R = A or G
 # Search for restriction site
 matches = search_motif(sequences, pattern=RESTRICTION_ENZYMES['EcoRI'])
 ```
+
+## Native k-mer accelerator
+
+K-mer counting (the sliding-window scan over every sequence for a chosen
+`k`) has two implementations:
+
+1. **Pure Python** (`app/core/kmer_native._count_kmers_python`) — always
+   available, zero extra dependencies, what the app uses out of the box.
+2. **Native, Cython-compiled** (`app/core/_kmer_accel.pyx`) — an optional
+   compiled extension for faster counting on large genomes. It is **not**
+   part of the app's required dependencies and is **not** committed as a
+   binary; you build it yourself if you want it.
+
+`app/core/kmer_native.count_kmers()` tries the compiled extension first
+and transparently falls back to the Python counter if it isn't present —
+the app never crashes for lack of a compiler. The two implementations are
+required to return byte-for-byte identical counts
+(`tests/test_kmer_native.py` checks this on hand-picked and randomized
+inputs whenever the extension is built), and the Streamlit UI's K-mer
+Analysis panel always states outright which backend produced the numbers
+you're looking at — it is never left unstated.
+
+### Building it
+
+Requires a C compiler on the host (MSVC on Windows, gcc/clang on
+Linux/macOS) plus Cython and setuptools — build-time only, not runtime
+dependencies:
+
+```bash
+uv run --python 3.12 --with cython --with setuptools \
+    python build_kmer_ext.py build_ext --inplace
+```
+
+or, with Cython and a compiler already on `PATH`:
+
+```bash
+pip install -e ".[native]"
+python build_kmer_ext.py build_ext --inplace
+```
+
+On success this drops a compiled module next to `_kmer_accel.pyx` (e.g.
+`_kmer_accel.cp312-win_amd64.pyd` on Windows or
+`_kmer_accel.cpython-312-x86_64-linux-gnu.so` on Linux); `kmer_native.py`
+picks it up automatically on the next import, no other wiring needed. If
+the build fails or is skipped — no compiler on the deploy host, for
+instance — the app still runs correctly on the Python path and says so in
+the UI.
+
+### Benchmarking it
+
+```bash
+uv run --python 3.12 python benchmarks/benchmark_kmer.py
+```
+
+Times both paths (when native is built) across several sequence lengths
+and `k` values on identical input, and writes
+`benchmarks/kmer_benchmark_results.json`. It refuses to report a speedup
+if the two paths ever disagree on the result. In this repo's own
+development environment (no C compiler installed), only the Python path
+could be timed — see that JSON file's `environment` block, which records
+that plainly rather than inventing native numbers. Representative
+Python-path timings measured here (single 500,000 bp random sequence):
+
+| k | Python (min of 3 runs) |
+|---|---|
+| 4 | ~762 ms |
+| 8 | ~1.31 s |
+| 12 | ~1.63 s |
+
+Rerun the script after building the extension on a machine with a
+compiler to get a real native-vs-Python comparison and speedup figures.
 
 ## Testing
 

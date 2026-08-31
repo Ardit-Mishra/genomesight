@@ -23,6 +23,8 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 import logging
 
+from app.core import kmer_native
+
 logger = logging.getLogger(__name__)
 
 
@@ -277,38 +279,40 @@ class SequenceAnalyzer:
     def analyze_kmers(self, sequences: List, k: int = 3) -> Dict[str, Any]:
         """
         Analyze k-mer frequencies in sequences.
-        
+
         K-mers are subsequences of length k. This analysis is useful for:
         - Codon usage analysis (k=3)
         - Motif discovery
         - Sequence comparison
         - Repeat identification
-        
+
+        Counting is delegated to app.core.kmer_native, which uses the
+        compiled Cython accelerator when it has been built for this
+        platform/Python version, and otherwise falls back to an equivalent
+        pure-Python counter. The returned 'backend' field says which one
+        ran ("native" or "python") so callers (the Streamlit UI in
+        particular) can announce it rather than leave it silent.
+
         Args:
             sequences: List of Bio.SeqRecord objects
             k: K-mer length (default 3 for codons)
-        
+
         Returns:
-            Dictionary with k-mer statistics and counts
+            Dictionary with k-mer statistics, counts, and the backend used
         """
-        all_kmers = Counter()
-        
-        for seq_record in sequences:
-            sequence = str(seq_record.seq).upper()
-            
-            for i in range(len(sequence) - k + 1):
-                kmer = sequence[i:i+k]
-                if all(base in 'ATCG' for base in kmer):
-                    all_kmers[kmer] += 1
-        
+        raw_sequences = [str(seq_record.seq) for seq_record in sequences]
+        counts, backend = kmer_native.count_kmers(raw_sequences, k)
+        all_kmers = Counter(counts)
+
         total = sum(all_kmers.values())
-        
+
         return {
             'k': k,
             'total_kmers': total,
             'unique_kmers': len(all_kmers),
             'most_common': all_kmers.most_common(20),
-            'all_kmers': dict(all_kmers)
+            'all_kmers': dict(all_kmers),
+            'backend': backend
         }
     
     def translate_codon(self, codon: str) -> str:

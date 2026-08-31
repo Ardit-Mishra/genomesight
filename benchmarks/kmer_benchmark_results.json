@@ -1,0 +1,154 @@
+{
+  "environment": {
+    "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "native_available": false,
+    "native_import_error": "cannot import name '_kmer_accel' from partially initialized module 'app.core' (most likely due to a circular import) (C:\\Users\\ardit\\Downloads\\live-projects\\GenomeSight\\app\\core\\__init__.py)"
+  },
+  "runs": [
+    {
+      "sequence_length": 1000,
+      "k": 4,
+      "python": {
+        "seconds_min": 0.0014462000108323991,
+        "seconds_mean": 0.001522000001083749,
+        "repeats": 3,
+        "result_unique_kmers": 245
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 1000,
+      "k": 8,
+      "python": {
+        "seconds_min": 0.002058400001260452,
+        "seconds_mean": 0.0023155666664630794,
+        "repeats": 3,
+        "result_unique_kmers": 989
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 1000,
+      "k": 12,
+      "python": {
+        "seconds_min": 0.002652800001669675,
+        "seconds_mean": 0.0027579999975084015,
+        "repeats": 3,
+        "result_unique_kmers": 989
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 10000,
+      "k": 4,
+      "python": {
+        "seconds_min": 0.015680999989854172,
+        "seconds_mean": 0.016240966661522787,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 10000,
+      "k": 8,
+      "python": {
+        "seconds_min": 0.022269900000537746,
+        "seconds_mean": 0.02305139999468035,
+        "repeats": 3,
+        "result_unique_kmers": 9195
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 10000,
+      "k": 12,
+      "python": {
+        "seconds_min": 0.027403300002333708,
+        "seconds_mean": 0.028640033332825016,
+        "repeats": 3,
+        "result_unique_kmers": 9987
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 100000,
+      "k": 4,
+      "python": {
+        "seconds_min": 0.14408519999415148,
+        "seconds_mean": 0.14755246666512298,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 100000,
+      "k": 8,
+      "python": {
+        "seconds_min": 0.2519451999978628,
+        "seconds_mean": 0.262050599999687,
+        "repeats": 3,
+        "result_unique_kmers": 51149
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 100000,
+      "k": 12,
+      "python": {
+        "seconds_min": 0.31443969999963883,
+        "seconds_mean": 0.3178806666692253,
+        "repeats": 3,
+        "result_unique_kmers": 99699
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 500000,
+      "k": 4,
+      "python": {
+        "seconds_min": 0.7619782999972813,
+        "seconds_mean": 0.7795282666678153,
+        "repeats": 3,
+        "result_unique_kmers": 256
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 500000,
+      "k": 8,
+      "python": {
+        "seconds_min": 1.3092395999992732,
+        "seconds_mean": 1.3230882333300542,
+        "repeats": 3,
+        "result_unique_kmers": 65500
+      },
+      "native": null,
+      "speedup_x": null
+    },
+    {
+      "sequence_length": 500000,
+      "k": 12,
+      "python": {
+        "seconds_min": 1.6315420999890193,
+        "seconds_mean": 1.6423546666628681,
+        "repeats": 3,
+        "result_unique_kmers": 492674
+      },
+      "native": null,
+      "speedup_x": null
+    }
+  ]
+}

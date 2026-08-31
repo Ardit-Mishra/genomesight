@@ -11,3 +11,12 @@ dependencies = [
     "spyprot>=0.9.6",
     "streamlit>=1.49.1",
 ]
+
+# Build-time only (not runtime) deps for the optional native k-mer
+# accelerator -- see build_kmer_ext.py and README.md's "Native k-mer
+# accelerator" section. Never required to run the app.
+[project.optional-dependencies]
+native = [
+    "cython>=3.0",
+    "setuptools>=68",
+]
