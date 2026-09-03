@@ -20,7 +20,10 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
+# Root-anchored deliberately. A bare `lib/` matches at ANY depth, and it silently
+# excluded frontend/src/lib/ — so the frontend could not build from a clean clone
+# while building fine locally. CI caught it; nothing else would have.
+/lib/
 lib64/
 parts/
 sdist/
