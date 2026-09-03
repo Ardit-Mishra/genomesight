@@ -1,0 +1,8 @@
+# Test-only dependencies.
+#
+# httpx is pinned because Starlette's TestClient calls httpx.Client(app=...),
+# which httpx removed in 0.28. With an unpinned httpx the suite does not fail --
+# it fails to COLLECT, so pytest reports an error and zero tests run. A green-looking
+# "no failures" with 0 passed is the failure mode this pin exists to prevent.
+httpx<0.28
+pytest>=8.0

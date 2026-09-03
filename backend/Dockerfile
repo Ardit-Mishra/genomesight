@@ -18,4 +18,7 @@ COPY app/ ./app/
 EXPOSE 8000
 
 # Run uvicorn server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form so ${PORT} is expanded at runtime. Render assigns the port dynamically;
+# the exec form above hardcoded 8000 and ignored it, so the container could bind a
+# port the platform was not routing to.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
