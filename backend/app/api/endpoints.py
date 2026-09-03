@@ -18,9 +18,10 @@ from app.api.schemas import (
     TranslateResponse,
 )
 from app.core.alignment import perform_alignment
+from app.core.build_info import build_info
 from app.core.codons import calculate_codon_usage, calculate_rscu
 from app.core.io_fasta import parse_fasta_string
-from app.core.kmer_native import count_kmers
+from app.core.kmer_native import backend_status as kmer_backend_status, count_kmers
 from app.core.motifs import (
     get_enzyme_list,
     iupac_to_regex,
@@ -52,7 +53,7 @@ def analyze_sequence(payload: AnalyzeRequest):
 
     records = parse_fasta_string(content)
     if not records:
-        raise HTTPException(status_code=400, detail="No valid FASTA/FASTQ records found in input.")
+        raise HTTPException(status_code=400, detail="No valid FASTA, FASTQ or GenBank records found in input.")
 
     try:
         sequences = [normalize_sequence(str(record.seq)) for record in records]
@@ -142,7 +143,23 @@ def codon_usage(payload: CodonRequest):
 
 @router.get("/health")
 def health_check():
-    return {"status": self_ping_status(), "service": "genomesight-backend", "version": "2.0.0"}
+    """Liveness plus the deployed commit.
+
+    The commit is the point: without it, telling a stale deployment from a code
+    defect means comparing behaviour endpoint by endpoint. With it, it is one
+    field against `git rev-parse HEAD`.
+    """
+    info = build_info()
+    return {
+        "status": self_ping_status(),
+        "service": "genomesight-backend",
+        "version": "2.0.0",
+        "commit": info["commit"],
+        "commit_short": info["commit_short"],
+        "branch": info["branch"],
+        "commit_source": info["source"],
+        "kmer_engine": kmer_backend_status()["backend"],
+    }
 
 
 def _records_from(payload_sequence: str):
@@ -161,7 +178,7 @@ def _records_from(payload_sequence: str):
             raise _http_422(error) from error
     records = parse_fasta_string(content)
     if not records:
-        raise HTTPException(status_code=400, detail="No valid FASTA/FASTQ records found in input.")
+        raise HTTPException(status_code=400, detail="No valid FASTA, FASTQ or GenBank records found in input.")
     return records
 
 

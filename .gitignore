@@ -93,3 +93,9 @@ temp/
 # to pure Python when this isn't present.
 app/core/_kmer_accel*.pyd
 app/core/_kmer_accel*.c
+
+# Compiled k-mer accelerator (built per-platform at image build time, never committed)
+*.pyd
+*.so
+backend/app/core/_kmer_accel.c
+backend/build/

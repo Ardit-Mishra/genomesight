@@ -11,8 +11,16 @@ app = FastAPI(
 # Configure CORS for frontend access (Vercel / Localhost)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for seamless developer experience & production flexibility
-    allow_credentials=True,
+    # The CORS spec forbids "*" together with credentials, and browsers reject the
+    # pair outright. Starlette papers over it by echoing the request origin, which
+    # means the previous config was effectively "any origin, WITH credentials" --
+    # strictly more permissive than intended.
+    #
+    # This API is public and stateless: it reads no cookies and issues no session.
+    # So the honest configuration is a genuine wildcard with credentials OFF, which
+    # is both what the service needs and what browsers will actually honour.
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
