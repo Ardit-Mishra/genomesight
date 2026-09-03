@@ -9,7 +9,7 @@
 | **Frontend root** | `frontend/` · build `npm run build` · output `dist/` |
 | **Backend root** | `backend/` · `backend/Dockerfile` |
 | **Frontend → backend** | `frontend/.env.production` sets `VITE_API_URL` |
-| **Last verified** | 2026-09-03 |
+| **Last verified** | 2026-09-03 — Render confirmed watching `main`, verified via `/api/health` reporting `"branch": "main"` |
 
 ## Is production current?
 
