@@ -1,0 +1,44 @@
+name: Keep backend warm
+
+# The Render free instance sleeps after ~15 minutes idle and the next visitor
+# waits ~50 seconds. A self-ping inside the app cannot fix this: once the
+# instance is asleep the process is gone, so there is nothing left to send the
+# ping. Only an external request can wake it, which is why this lives here.
+#
+# Every 12 minutes, inside the 15-minute idle window with margin for a late run
+# (GitHub's scheduler is best-effort, not punctual).
+on:
+  schedule:
+    - cron: "*/12 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake and verify the API
+        run: |
+          URL="https://genomesight-api.onrender.com/api/health"
+
+          # --max-time 90 because a cold start legitimately takes ~50s. A shorter
+          # timeout would report the service down while it is merely waking.
+          body=$(curl -sS --max-time 90 --retry 2 --retry-delay 20 "$URL") || {
+            echo "::error::No response from $URL"; exit 1; }
+
+          echo "$body"
+
+          # A 200 with a broken payload is still a broken service, so check a
+          # field rather than trusting the status code alone.
+          echo "$body" | grep -q '"status":"active"' || {
+            echo "::error::Health payload did not report status=active"; exit 1; }
+
+          commit=$(echo "$body" | sed -n 's/.*"commit_short":"\([^"]*\)".*/\1/p')
+          echo "Awake. Deployed commit: ${commit:-unknown}"

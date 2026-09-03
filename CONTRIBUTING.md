@@ -111,7 +111,7 @@ def test_gc_content_balanced():
 
 When adding new features:
 
-- **Core analysis code**: Add to `app/core/`
+- **Core analysis code**: Add to `backend/app/core/`
 - **UI components**: Add to `app/ui/`
 - **Tests**: Add to `tests/`
 - **Sample data**: Add to `sample_data/`

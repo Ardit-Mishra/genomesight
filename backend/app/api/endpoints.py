@@ -29,7 +29,7 @@ from app.core.motifs import (
     search_restriction_site,
 )
 from app.core.orf import find_orfs, get_orf_summary
-from app.core.pinger import self_ping_status
+from app.core.pinger import liveness, note_request
 from app.core.validation import normalize_sequence, wrap_raw_as_fasta
 
 router = APIRouter(prefix="/api", tags=["GenomeSight Analysis"])
@@ -149,9 +149,13 @@ def health_check():
     defect means comparing behaviour endpoint by endpoint. With it, it is one
     field against `git rev-parse HEAD`.
     """
+    note_request()
     info = build_info()
+    alive = liveness()
     return {
-        "status": self_ping_status(),
+        "status": alive["status"],
+        "uptime_seconds": alive["uptime_seconds"],
+        "likely_cold_start": alive["likely_cold_start"],
         "service": "genomesight-backend",
         "version": "2.0.0",
         "commit": info["commit"],
