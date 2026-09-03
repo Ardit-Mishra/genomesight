@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "GenomeSight"
+abstract: >-
+  A sequence analysis workbench for DNA and RNA: composition and GC content,
+  k-mer profiling with an optional native accelerator, six-frame ORF detection,
+  IUPAC motif and restriction-site search, codon usage with RSCU, translation,
+  and pairwise alignment. Served by a FastAPI backend with a React frontend.
+  All analysis is deterministic; no model sits in the factual path.
+authors:
+  - family-names: "Mishra"
+    given-names: "Ardit"
+repository-code: "https://github.com/Ardit-Mishra/genomesight"
+url: "https://genomesight-frontend.vercel.app"
+license: MIT
+keywords:
+  - bioinformatics
+  - sequence-analysis
+  - genomics
+  - open-reading-frames
+  - codon-usage
+  - fastapi

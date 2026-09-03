@@ -12,12 +12,24 @@ and pairwise alignment.
 
 No model sits in the factual path. The same input always produces the same result.
 
+## Why this exists
+
+Routine sequence work — checking GC content, finding open reading frames, looking for a
+restriction site, comparing two reads — usually means either writing a throwaway Biopython
+script or pasting sequence into a site that offers no account of how it computed anything.
+
+GenomeSight does these operations in one place and makes each result checkable: the method
+that ran is named, the alignment identity is defined over aligned columns, the k-mer engine
+reports whether the native or Python path produced the counts, and the API states the commit
+it was built from. It is aimed at anyone who wants a quick answer they can verify rather than
+one they must trust.
+
 ## Features
 
 - **Sequence statistics** — GC content, nucleotide composition, molecular weight; FASTA,
   FASTQ and GenBank input, detected by content rather than by file extension
 - **K-mer analysis** — configurable k, with an optional Cython accelerator measured at
-  **5.3×–11.0×** over the pure-Python path (see [Native k-mer accelerator](#native-k-mer-accelerator))
+  **5.27×–11.04×** over the pure-Python path (see [Native k-mer accelerator](#native-k-mer-accelerator))
 - **ORF detection** — all three forward frames plus the reverse complement, with a
   minimum-length threshold and per-frame summary
 - **Motif and restriction-site search** — IUPAC ambiguity codes expanded to a regular
@@ -110,10 +122,44 @@ cd backend
 uv run --python 3.12 --with-requirements requirements.txt python benchmarks/benchmark_kmer.py
 ```
 
-Measured on an RTX-class Windows desktop, 12 configurations: **5.27×–11.04×**. The speedup
+Measured on one Windows desktop across 12 configurations: **5.27×–11.04×**. The speedup
 shrinks as input grows, because both paths still build the same Python dictionary — the
 accelerator removes per-window interpreter overhead, not the dictionary. Recorded in
 `backend/benchmarks/kmer_benchmark_results.json`.
+
+## Limitations
+
+Stated plainly, because a tool that claims no weaknesses invites the reader to find them.
+
+- **Alignment is pairwise only.** No multiple sequence alignment. The implementation wraps
+  Biopython's `PairwiseAligner` with default scoring, which is not tuned for any particular
+  biological question.
+- **ORF coordinates on the minus strand** are reported against the reverse-complement
+  sequence, not the original strand. The API returns a `coordinate_note` saying so, but a
+  caller that ignores it will misplace features.
+- **ORF detection is codon-based, not gene prediction.** It finds start-to-stop spans. It
+  does not model splicing, ribosomal binding sites, or coding potential, so it will report
+  spans that are not genes.
+- **`find_common_motifs` counts exact k-mers.** It does not build a position weight matrix
+  and does not score statistical enrichment against a background model.
+- **The restriction enzyme set is 10 common enzymes**, hardcoded. It is not REBASE.
+- **The k-mer benchmark is single-machine, single-run.** 12 configurations on one Windows
+  desktop, best-of-N timing, no confidence intervals. It shows the native path is faster
+  here; it is not a portable performance claim.
+- **The hosted backend sleeps.** On the free tier the first request after ~15 minutes idle
+  waits ~50 seconds. The client retries transparently, but the wait is real.
+- **Large inputs are held in memory.** There is no streaming parser, so genome-scale FASTA
+  will exhaust memory rather than degrade gracefully.
+
+## Reproduce
+
+Every number in this README comes from a committed artifact:
+
+| claim | regenerate with |
+|---|---|
+| 67 tests | `cd backend && pytest tests/ -q` |
+| 5.27×–11.04× k-mer speedup | `cd backend && python benchmarks/benchmark_kmer.py` |
+| the deployed commit | `curl https://genomesight-api.onrender.com/api/health` |
 
 ## Tests
 
