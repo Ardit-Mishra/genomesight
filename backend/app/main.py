@@ -29,9 +29,25 @@ app.include_router(api_router)
 
 @app.get("/")
 def root():
+    """Service index.
+
+    Lists the endpoints that actually exist rather than only pointing at /docs,
+    so anyone who lands on the root URL can see the API surface without loading
+    the OpenAPI page. Built from the router itself, so it cannot drift out of
+    date the way a hand-maintained list would.
+    """
+    endpoints = sorted(
+        {
+            f"{method} {route.path}"
+            for route in api_router.routes
+            for method in getattr(route, "methods", set())
+            if method not in {"HEAD", "OPTIONS"}
+        }
+    )
     return {
         "project": "GenomeSight API",
         "status": "online",
         "docs_url": "/docs",
-        "health_endpoint": "/api/health"
+        "health_endpoint": "/api/health",
+        "endpoints": endpoints,
     }
