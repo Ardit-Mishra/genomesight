@@ -8,6 +8,12 @@ from app.api.schemas import (
     AnalyzeResponse,
     CodonRequest,
     CodonResponse,
+    EnzymeListResponse,
+    MotifRequest,
+    MotifResponse,
+    OrfRequest,
+    OrfResponse,
+    RestrictionRequest,
     TranslateRequest,
     TranslateResponse,
 )
@@ -15,6 +21,13 @@ from app.core.alignment import perform_alignment
 from app.core.codons import calculate_codon_usage, calculate_rscu
 from app.core.io_fasta import parse_fasta_string
 from app.core.kmer_native import count_kmers
+from app.core.motifs import (
+    get_enzyme_list,
+    iupac_to_regex,
+    search_motif,
+    search_restriction_site,
+)
+from app.core.orf import find_orfs, get_orf_summary
 from app.core.pinger import self_ping_status
 from app.core.validation import normalize_sequence, wrap_raw_as_fasta
 
@@ -130,3 +143,130 @@ def codon_usage(payload: CodonRequest):
 @router.get("/health")
 def health_check():
     return {"status": self_ping_status(), "service": "genomesight-backend", "version": "2.0.0"}
+
+
+def _records_from(payload_sequence: str):
+    """Parse input to SeqRecords, accepting either FASTA/FASTQ or a bare sequence.
+
+    Shared by the ORF and motif endpoints so all three accept the same inputs the
+    analyze endpoint does, rather than each inventing its own rules.
+    """
+    content = payload_sequence or ""
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="A sequence must be provided.")
+    if not content.lstrip().startswith((">", "@")):
+        try:
+            content = wrap_raw_as_fasta(content)
+        except ValueError as error:
+            raise _http_422(error) from error
+    records = parse_fasta_string(content)
+    if not records:
+        raise HTTPException(status_code=400, detail="No valid FASTA/FASTQ records found in input.")
+    return records
+
+
+@router.post("/orfs", response_model=OrfResponse)
+def detect_orfs(payload: OrfRequest):
+    """Six-frame open reading frame detection."""
+    records = _records_from(payload.sequence)
+    try:
+        sequence = "".join(normalize_sequence(str(record.seq)) for record in records)
+    except ValueError as error:
+        raise _http_422(error) from error
+
+    orfs = find_orfs(
+        sequence,
+        min_length=payload.min_length,
+        include_reverse=payload.include_reverse,
+        use_alternative_starts=payload.use_alternative_starts,
+    )
+    summary = get_orf_summary(orfs)
+    # The summary carries the ORF dataclass itself under 'longest_orf', which is not
+    # JSON-serialisable; the full record is already in the orfs list.
+    summary.pop("longest_orf", None)
+
+    return {
+        "success": True,
+        "coordinate_note": (
+            "Minus-strand coordinates are given against the reverse-complement "
+            "sequence, not the original strand."
+        ),
+        "total": len(orfs),
+        "summary": summary,
+        "orfs": [
+            {
+                "start": orf.start,
+                "end": orf.end,
+                "length_nt": orf.length_nt,
+                "length_aa": orf.length_aa,
+                "frame": orf.frame,
+                "strand": orf.strand,
+                "start_codon": orf.start_codon,
+                "stop_codon": orf.stop_codon,
+                "protein": orf.protein,
+                "gc_content": round(orf.gc_content, 2),
+            }
+            for orf in orfs
+        ],
+    }
+
+
+@router.post("/motifs", response_model=MotifResponse)
+def find_motifs(payload: MotifRequest):
+    """Search for an IUPAC nucleotide pattern (R, Y, N, ... are expanded)."""
+    records = _records_from(payload.sequence)
+    matches = search_motif(records, payload.pattern, context_length=payload.context_length)
+    return {
+        "success": True,
+        "pattern": payload.pattern.upper(),
+        # Returning the compiled regex makes the ambiguity expansion inspectable
+        # instead of asking the user to trust it.
+        "regex": iupac_to_regex(payload.pattern),
+        "total": len(matches),
+        "matches": [
+            {
+                "pattern": m.pattern,
+                "sequence_id": m.sequence_id,
+                "start_1based": m.start_1based,
+                "end": m.end,
+                "matched_sequence": m.matched_sequence,
+                "context": m.context,
+            }
+            for m in matches
+        ],
+    }
+
+
+@router.post("/restriction-sites", response_model=MotifResponse)
+def find_restriction_sites(payload: RestrictionRequest):
+    """Search for a named restriction enzyme's recognition site."""
+    records = _records_from(payload.sequence)
+    try:
+        matches = search_restriction_site(records, payload.enzyme)
+    except ValueError as error:
+        raise _http_422(error) from error
+
+    site = get_enzyme_list()[payload.enzyme]
+    return {
+        "success": True,
+        "pattern": f"{payload.enzyme} ({site})",
+        "regex": iupac_to_regex(site),
+        "total": len(matches),
+        "matches": [
+            {
+                "pattern": m.pattern,
+                "sequence_id": m.sequence_id,
+                "start_1based": m.start_1based,
+                "end": m.end,
+                "matched_sequence": m.matched_sequence,
+                "context": m.context,
+            }
+            for m in matches
+        ],
+    }
+
+
+@router.get("/enzymes", response_model=EnzymeListResponse)
+def list_enzymes():
+    """Recognition sites for the restriction enzymes this service knows."""
+    return {"success": True, "enzymes": get_enzyme_list()}

@@ -125,3 +125,79 @@ export const checkHealth = async (): Promise<{ status: string; service: string; 
   const response = await apiClient.get('/api/health');
   return response.data;
 };
+
+// ---------------------------------------------------------------------------
+// ORF detection, motif search and restriction sites
+// Ported from the Streamlit workbench so the deployed app regains the
+// capability its documentation already claimed.
+// ---------------------------------------------------------------------------
+export interface OrfRequest {
+  sequence: string;
+  min_length?: number;
+  include_reverse?: boolean;
+  use_alternative_starts?: boolean;
+}
+
+export interface OrfRecord {
+  start: number;
+  end: number;
+  length_nt: number;
+  length_aa: number;
+  frame: number;
+  strand: string;
+  start_codon: string;
+  stop_codon: string;
+  protein: string;
+  gc_content: number;
+}
+
+export interface OrfResponse {
+  success: boolean;
+  coordinate_note: string;
+  total: number;
+  summary: {
+    total: number;
+    average_length?: number;
+    max_length?: number;
+    min_length?: number;
+    by_frame?: Record<string, number>;
+  };
+  orfs: OrfRecord[];
+}
+
+export interface MotifMatchRecord {
+  pattern: string;
+  sequence_id: string;
+  start_1based: number;
+  end: number;
+  matched_sequence: string;
+  context: string;
+}
+
+export interface MotifResponse {
+  success: boolean;
+  pattern: string;
+  regex: string;
+  total: number;
+  matches: MotifMatchRecord[];
+}
+
+export const detectOrfs = async (data: OrfRequest): Promise<OrfResponse> => {
+  const response = await apiClient.post<OrfResponse>('/api/orfs', data);
+  return response.data;
+};
+
+export const findMotifs = async (data: { sequence: string; pattern: string }): Promise<MotifResponse> => {
+  const response = await apiClient.post<MotifResponse>('/api/motifs', data);
+  return response.data;
+};
+
+export const findRestrictionSites = async (data: { sequence: string; enzyme: string }): Promise<MotifResponse> => {
+  const response = await apiClient.post<MotifResponse>('/api/restriction-sites', data);
+  return response.data;
+};
+
+export const listEnzymes = async (): Promise<Record<string, string>> => {
+  const response = await apiClient.get<{ success: boolean; enzymes: Record<string, string> }>('/api/enzymes');
+  return response.data.enzymes;
+};

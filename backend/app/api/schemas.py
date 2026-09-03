@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -49,3 +49,73 @@ class CodonResponse(BaseModel):
     success: bool
     codon_counts: Dict[str, int]
     rscu: Dict[str, float]
+
+
+# ---------------------------------------------------------------------------
+# ORF detection
+# ---------------------------------------------------------------------------
+class OrfRequest(BaseModel):
+    sequence: str
+    min_length: int = Field(default=100, ge=3, le=100_000)
+    include_reverse: bool = True
+    use_alternative_starts: bool = False
+
+
+class OrfRecord(BaseModel):
+    start: int
+    end: int
+    length_nt: int
+    length_aa: int
+    frame: int
+    strand: str
+    start_codon: str
+    stop_codon: str
+    protein: str
+    gc_content: float
+
+
+class OrfResponse(BaseModel):
+    success: bool
+    # Coordinates on the minus strand are reported against the reverse-complement
+    # sequence, not the original. Stated here because a coordinate whose frame of
+    # reference is unstated is the kind of number that gets silently misread.
+    coordinate_note: str
+    total: int
+    summary: dict
+    orfs: List[OrfRecord]
+
+
+# ---------------------------------------------------------------------------
+# Motif and restriction-site search
+# ---------------------------------------------------------------------------
+class MotifRequest(BaseModel):
+    sequence: str
+    pattern: str = Field(min_length=1, max_length=64)
+    context_length: int = Field(default=10, ge=0, le=100)
+
+
+class RestrictionRequest(BaseModel):
+    sequence: str
+    enzyme: str
+
+
+class MotifMatchRecord(BaseModel):
+    pattern: str
+    sequence_id: str
+    start_1based: int
+    end: int
+    matched_sequence: str
+    context: str
+
+
+class MotifResponse(BaseModel):
+    success: bool
+    pattern: str
+    regex: str
+    total: int
+    matches: List[MotifMatchRecord]
+
+
+class EnzymeListResponse(BaseModel):
+    success: bool
+    enzymes: dict

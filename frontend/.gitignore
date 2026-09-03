@@ -2,3 +2,6 @@
 node_modules/
 dist/
 .env*
+
+# local dev overrides, never committed
+.env.local

@@ -6,6 +6,8 @@ import {
   GitCompareArrows,
   LoaderCircle,
   Play,
+  Scissors,
+  Search,
   ShieldCheck,
 } from "lucide-react"
 
@@ -22,14 +24,28 @@ import {
   AlignResponse,
   AnalyzeResponse,
   CodonResponse,
+  MotifResponse,
+  OrfResponse,
   alignSequences,
   analyzeSequence,
   calculateCodons,
+  detectOrfs,
+  findMotifs,
+  findRestrictionSites,
   translateSequence,
 } from "@/services/api"
 
 const SAMPLE = ">example_sequence\nATGGCCATTGTAATGGGCCGCTGAAAGGGTGCCCGATAG"
-type Operation = "analysis" | "alignment" | "codons" | null
+// A 113 nt construct with one unambiguous plus-strand ORF spanning 105 nt (ATG ... TAA),
+// comfortably above the default 60 nt threshold so the panel demonstrates a real hit
+// rather than an empty state.
+const ORF_SAMPLE = ">orf_example\nCCTT" + "ATG" + "GCTACGGTA".repeat(11) + "TAA" + "GGAT"
+// Two EcoRI sites (GAATTC) at 1-based positions 1 and 31, so both the IUPAC pattern
+// search and the named-enzyme search have something true to find.
+const MOTIF_SAMPLE = ">motif_example\nGAATTCACGTACGTACGTACGTACGTACGTGAATTCACGT"
+const ENZYMES = ["EcoRI", "BamHI", "HindIII", "EcoRV", "PstI", "SalI", "XbaI", "NotI", "SmaI", "KpnI"]
+
+type Operation = "analysis" | "alignment" | "codons" | "orfs" | "motifs" | null
 type InputSummary = { format: string; characterCount: number; baseCount: number | null; state: string; detail: string; preview: string; invalid: boolean }
 
 function App() {
@@ -43,6 +59,14 @@ function App() {
   const [seq1, setSeq1] = useState("ACGT")
   const [seq2, setSeq2] = useState("AGT")
   const [codingSequence, setCodingSequence] = useState("ATGGCCATTGTAATGGGCCGCTGAAAGGGTGCCCGATAG")
+  const [orfSequence, setOrfSequence] = useState(ORF_SAMPLE)
+  const [orfMinLength, setOrfMinLength] = useState(60)
+  const [orfIncludeReverse, setOrfIncludeReverse] = useState(true)
+  const [orfs, setOrfs] = useState<OrfResponse | null>(null)
+  const [motifSequence, setMotifSequence] = useState(MOTIF_SAMPLE)
+  const [motifPattern, setMotifPattern] = useState("GAATTC")
+  const [enzyme, setEnzyme] = useState("EcoRI")
+  const [motifs, setMotifs] = useState<MotifResponse | null>(null)
 
   const composition = useMemo(() => analysis?.statistics.composition ?? {}, [analysis])
   const inputSummary = useMemo(() => summarizeInput(sequence), [sequence])
@@ -86,6 +110,40 @@ function App() {
       setAlignment(await alignSequences({ seq1, seq2, mode: "global" }))
     } catch (cause) {
       setError(readError(cause, "Alignment could not be completed."))
+    } finally {
+      setActiveOperation(null)
+    }
+  }
+
+  async function runOrfs(event: FormEvent) {
+    event.preventDefault()
+    setActiveOperation("orfs")
+    setError(null)
+    try {
+      setOrfs(await detectOrfs({
+        sequence: orfSequence,
+        min_length: orfMinLength,
+        include_reverse: orfIncludeReverse,
+      }))
+    } catch (cause) {
+      setError(readError(cause, "ORF detection could not be completed."))
+    } finally {
+      setActiveOperation(null)
+    }
+  }
+
+  // One handler for both searches: a named enzyme is just a motif whose pattern
+  // the server owns, so they share a result shape and a results panel.
+  async function runMotifs(event: FormEvent, mode: "pattern" | "enzyme") {
+    event.preventDefault()
+    setActiveOperation("motifs")
+    setError(null)
+    try {
+      setMotifs(mode === "pattern"
+        ? await findMotifs({ sequence: motifSequence, pattern: motifPattern })
+        : await findRestrictionSites({ sequence: motifSequence, enzyme }))
+    } catch (cause) {
+      setError(readError(cause, "Motif search could not be completed."))
     } finally {
       setActiveOperation(null)
     }
@@ -143,10 +201,12 @@ function App() {
         {error && <Alert variant="destructive" className="mb-6" aria-live="assertive"><AlertTitle>Analysis needs attention</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
 
         <Tabs defaultValue="analyze" className="min-w-0 space-y-6">
-          <TabsList variant="line" className="tool-tabs grid h-auto w-full grid-cols-3 gap-0 overflow-visible rounded-lg border bg-card p-1">
+          <TabsList variant="line" className="tool-tabs grid h-auto w-full grid-cols-2 gap-0 sm:grid-cols-5 overflow-visible rounded-lg border bg-card p-1">
             <TabsTrigger value="analyze" className="min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-2 py-2 text-center text-xs leading-tight data-[state=active]:bg-muted data-[state=active]:text-primary"><FileUp className="size-4" aria-hidden="true" /><span><span className="sm:hidden">Analyze</span><span className="hidden sm:inline">Sequence analysis</span></span></TabsTrigger>
             <TabsTrigger value="align" className="min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-2 py-2 text-center text-xs leading-tight data-[state=active]:bg-muted data-[state=active]:text-primary"><GitCompareArrows className="size-4" aria-hidden="true" /><span><span className="sm:hidden">Align</span><span className="hidden sm:inline">Pairwise alignment</span></span></TabsTrigger>
             <TabsTrigger value="codons" className="min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-2 py-2 text-center text-xs leading-tight data-[state=active]:bg-muted data-[state=active]:text-primary"><FlaskConical className="size-4" aria-hidden="true" /><span><span className="sm:hidden">Codons</span><span className="hidden sm:inline">Translation &amp; RSCU</span></span></TabsTrigger>
+            <TabsTrigger value="orfs" className="min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-2 py-2 text-center text-xs leading-tight data-[state=active]:bg-muted data-[state=active]:text-primary"><Search className="size-4" aria-hidden="true" /><span><span className="sm:hidden">ORFs</span><span className="hidden sm:inline">ORF detection</span></span></TabsTrigger>
+            <TabsTrigger value="motifs" className="min-h-14 min-w-0 flex-col gap-1 whitespace-normal px-2 py-2 text-center text-xs leading-tight data-[state=active]:bg-muted data-[state=active]:text-primary"><Scissors className="size-4" aria-hidden="true" /><span><span className="sm:hidden">Motifs</span><span className="hidden sm:inline">Motifs &amp; sites</span></span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="analyze" className="space-y-6">
@@ -166,6 +226,11 @@ function App() {
           </TabsContent>
 
           <TabsContent value="align"><Card className="workbench-panel rounded-lg shadow-none"><CardHeader><CardTitle className="flex items-center gap-2"><GitCompareArrows className="size-4 text-primary" aria-hidden="true" />Pairwise alignment</CardTitle><CardDescription>Global Needleman–Wunsch alignment. Identity is calculated over aligned columns, including gaps.</CardDescription></CardHeader><CardContent><form className="space-y-4" onSubmit={runAlignment}><div className="grid gap-4 md:grid-cols-2"><Field id="seq1" label="Sequence 1" value={seq1} onChange={setSeq1} /><Field id="seq2" label="Sequence 2" value={seq2} onChange={setSeq2} /></div><Button className="min-h-11" disabled={isBusy}>{activeOperation === "alignment" && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}Run alignment</Button></form>{alignment && <AlignmentResult data={alignment} />}</CardContent></Card></TabsContent>
+
+
+          <TabsContent value="orfs"><Card className="workbench-panel rounded-lg shadow-none"><CardHeader><CardTitle className="flex items-center gap-2"><Search className="size-4 text-primary" aria-hidden="true" />Open reading frames</CardTitle><CardDescription>Scans all three forward frames, and the reverse complement when enabled. Minus-strand coordinates are reported against the reverse-complement sequence.</CardDescription></CardHeader><CardContent><form className="space-y-4" onSubmit={runOrfs}><div className="space-y-2"><Label htmlFor="orf-sequence">Sequence or FASTA content</Label><Textarea id="orf-sequence" className="min-h-32 font-mono" value={orfSequence} onChange={(event) => setOrfSequence(event.target.value)} /></div><div className="flex flex-wrap items-end gap-4"><div className="space-y-2"><Label htmlFor="orf-min">Minimum length (nt)</Label><Input id="orf-min" type="number" min={3} max={100000} className="w-36 font-mono" value={orfMinLength} onChange={(event) => setOrfMinLength(Number(event.target.value) || 3)} /></div><Label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm"><input type="checkbox" className="size-4 accent-current" checked={orfIncludeReverse} onChange={(event) => setOrfIncludeReverse(event.target.checked)} />Include reverse strand</Label><Button className="min-h-11 sm:ml-auto" disabled={isBusy}>{activeOperation === "orfs" && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}Find ORFs</Button></div></form>{orfs && <OrfResults data={orfs} />}</CardContent></Card></TabsContent>
+
+          <TabsContent value="motifs"><Card className="workbench-panel rounded-lg shadow-none"><CardHeader><CardTitle className="flex items-center gap-2"><Scissors className="size-4 text-primary" aria-hidden="true" />Motifs &amp; restriction sites</CardTitle><CardDescription>IUPAC ambiguity codes are expanded before matching, and the resulting regular expression is shown so the expansion can be checked.</CardDescription></CardHeader><CardContent className="space-y-6"><div className="space-y-2"><Label htmlFor="motif-sequence">Sequence or FASTA content</Label><Textarea id="motif-sequence" className="min-h-32 font-mono" value={motifSequence} onChange={(event) => setMotifSequence(event.target.value)} /></div><div className="grid gap-6 md:grid-cols-2"><form className="space-y-3" onSubmit={(event) => runMotifs(event, "pattern")}><Label htmlFor="motif-pattern">IUPAC pattern</Label><Input id="motif-pattern" className="font-mono" value={motifPattern} onChange={(event) => setMotifPattern(event.target.value.toUpperCase())} /><p className="text-xs text-muted-foreground">R = A or G · Y = C or T · N = any · W = A or T</p><Button className="min-h-11 w-full" disabled={isBusy}>{activeOperation === "motifs" && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}Search pattern</Button></form><form className="space-y-3" onSubmit={(event) => runMotifs(event, "enzyme")}><Label htmlFor="enzyme">Restriction enzyme</Label><select id="enzyme" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={enzyme} onChange={(event) => setEnzyme(event.target.value)}>{ENZYMES.map((name) => <option key={name} value={name}>{name}</option>)}</select><p className="text-xs text-muted-foreground">Recognition site is resolved server-side from the enzyme name.</p><Button variant="outline" className="min-h-11 w-full" disabled={isBusy}>Find sites</Button></form></div>{motifs && <MotifResults data={motifs} />}</CardContent></Card></TabsContent>
 
           <TabsContent value="codons"><Card className="workbench-panel rounded-lg shadow-none"><CardHeader><CardTitle className="flex items-center gap-2"><FlaskConical className="size-4 text-primary" aria-hidden="true" />Translation &amp; RSCU</CardTitle><CardDescription>Frame 1 translation and relative synonymous codon usage for observed sense codons.</CardDescription></CardHeader><CardContent><form className="space-y-4" onSubmit={runCodons}><div className="space-y-2"><Label htmlFor="coding-sequence">Coding sequence</Label><Textarea id="coding-sequence" className="min-h-32 font-mono" value={codingSequence} onChange={(event) => setCodingSequence(event.target.value)} /></div><Button className="min-h-11" disabled={isBusy}>{activeOperation === "codons" && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}Translate &amp; calculate</Button></form>{protein && <ProteinResult protein={protein} />}{codons && <CodonResults data={codons} />}</CardContent></Card></TabsContent>
         </Tabs>
@@ -197,6 +262,40 @@ function ProteinResult({ protein }: { protein: string }) {
 
 function CodonResults({ data }: { data: CodonResponse }) {
   return <section className="motion-enter mt-6" aria-label="Observed codons" aria-live="polite"><div className="mb-3 flex items-baseline justify-between gap-4"><h2 className="text-sm font-medium">Observed codons</h2><span className="font-mono text-xs text-primary">Complete</span></div><div className="overflow-x-auto rounded-lg border"><Table><TableHeader><TableRow><TableHead>Codon</TableHead><TableHead className="text-right">Count</TableHead><TableHead className="text-right">RSCU</TableHead></TableRow></TableHeader><TableBody>{Object.entries(data.codon_counts).map(([codon, count]) => <TableRow key={codon}><TableCell className="font-mono text-primary">{codon}</TableCell><TableCell className="text-right font-mono">{count}</TableCell><TableCell className="text-right font-mono">{data.rscu[codon]?.toFixed(3) ?? "—"}</TableCell></TableRow>)}</TableBody></Table></div></section>
+}
+
+function OrfResults({ data }: { data: OrfResponse }) {
+  if (!data.total) {
+    return <p className="mt-6 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No open reading frames met the minimum length. Lower the threshold or enable the reverse strand.</p>
+  }
+  const summary = data.summary
+  const cards: [string, string | number][] = [
+    ["ORFs found", data.total],
+    ["Longest", `${summary.max_length ?? 0} nt`],
+    ["Shortest", `${summary.min_length ?? 0} nt`],
+    ["Mean length", `${Math.round(summary.average_length ?? 0)} nt`],
+  ]
+  return (
+    <section className="motion-enter mt-6 space-y-6" aria-label="ORF results" aria-live="polite">
+      <dl className="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2 lg:grid-cols-4">{cards.map(([label, value]) => <div key={label} className="bg-card p-4"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-2 font-mono text-lg font-medium">{value}</dd></div>)}</dl>
+      {summary.by_frame && <div className="flex flex-wrap gap-2" aria-label="ORFs per frame">{Object.entries(summary.by_frame).sort(([a], [b]) => a.localeCompare(b)).map(([frame, count]) => <Badge key={frame} variant="outline" className="font-mono text-xs">{frame}: {count}</Badge>)}</div>}
+      <p className="text-xs text-muted-foreground">{data.coordinate_note}</p>
+      <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Strand / frame</TableHead><TableHead className="text-right">Start</TableHead><TableHead className="text-right">End</TableHead><TableHead className="text-right">nt</TableHead><TableHead className="text-right">aa</TableHead><TableHead className="text-right">GC %</TableHead><TableHead>Protein</TableHead></TableRow></TableHeader><TableBody>{data.orfs.slice(0, 25).map((orf, index) => <TableRow key={`${orf.strand}${orf.frame}-${orf.start}-${index}`}><TableCell className="font-mono text-primary">{orf.strand}{orf.frame}</TableCell><TableCell className="text-right font-mono">{orf.start}</TableCell><TableCell className="text-right font-mono">{orf.end}</TableCell><TableCell className="text-right font-mono">{orf.length_nt}</TableCell><TableCell className="text-right font-mono">{orf.length_aa}</TableCell><TableCell className="text-right font-mono">{orf.gc_content.toFixed(1)}</TableCell><TableCell className="max-w-[16rem] truncate font-mono text-xs" title={orf.protein}>{orf.protein}</TableCell></TableRow>)}</TableBody></Table></div>
+      {data.total > 25 && <p className="text-xs text-muted-foreground">Showing the 25 longest of {data.total}.</p>}
+    </section>
+  )
+}
+
+function MotifResults({ data }: { data: MotifResponse }) {
+  return (
+    <section className="motion-enter space-y-4" aria-label="Motif results" aria-live="polite">
+      <div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-medium">{data.total} match{data.total === 1 ? "" : "es"}</span><Badge variant="outline" className="font-mono text-xs">{data.pattern}</Badge><span className="font-mono text-xs text-muted-foreground">regex: {data.regex}</span></div>
+      {data.total === 0
+        ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No occurrences of this pattern in the input.</p>
+        : <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Sequence</TableHead><TableHead className="text-right">Position</TableHead><TableHead>Match</TableHead><TableHead>Context</TableHead></TableRow></TableHeader><TableBody>{data.matches.slice(0, 50).map((match, index) => <TableRow key={`${match.sequence_id}-${match.start_1based}-${index}`}><TableCell className="font-mono text-xs">{match.sequence_id}</TableCell><TableCell className="text-right font-mono">{match.start_1based}</TableCell><TableCell className="font-mono text-primary">{match.matched_sequence}</TableCell><TableCell className="font-mono text-xs text-muted-foreground">{match.context}</TableCell></TableRow>)}</TableBody></Table></div>}
+      {data.total > 50 && <p className="text-xs text-muted-foreground">Showing the first 50 of {data.total}.</p>}
+    </section>
+  )
 }
 
 function summarizeInput(input: string): InputSummary {
