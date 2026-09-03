@@ -1,31 +1,41 @@
-from Bio.Seq import Seq
-from typing import Dict, List, Optional
+import re
 
-VALID_NUCLEOTIDES = set("ACGTNRYSWKMBDHV")
+VALID_NUCLEOTIDES = frozenset("ACGTNRYSWKMBDHV")
+
+
+def normalize_sequence(raw: str) -> str:
+    """Normalize whitespace and RNA uracil without silently removing bases."""
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError("A nucleotide sequence is required.")
+
+    sequence = re.sub(r"\s+", "", raw).upper().replace("U", "T")
+    invalid = sorted(set(sequence) - VALID_NUCLEOTIDES)
+    if invalid:
+        raise ValueError(
+            "Unsupported nucleotide symbol(s): "
+            f"{', '.join(invalid)}. Use DNA/RNA IUPAC nucleotide symbols only."
+        )
+    return sequence
+
 
 def is_valid_dna(seq: str, allow_ambiguity: bool = True) -> bool:
-    if not seq or not isinstance(seq, str):
+    try:
+        normalized = normalize_sequence(seq)
+    except ValueError:
         return False
-    allowed = VALID_NUCLEOTIDES if allow_ambiguity else set("ACGT")
-    return all(base.upper() in allowed for base in seq)
+    return allow_ambiguity or set(normalized).issubset({"A", "C", "G", "T"})
 
-def sanitize_raw_sequence(raw: str) -> Optional[str]:
-    if not raw or not isinstance(raw, str):
+
+def sanitize_raw_sequence(raw: str) -> str | None:
+    try:
+        return normalize_sequence(raw)
+    except ValueError:
         return None
-    cleaned = ''.join(ch.upper() for ch in raw if ch.isalpha())
-    # Allow only standard DNA + common ambiguity
-    allowed_chars = set("ACGTNRYSWKMBDHV")
-    cleaned = ''.join(ch for ch in cleaned if ch in allowed_chars)
-    if len(cleaned) < 3:
-        return None
-    return cleaned
+
 
 def wrap_raw_as_fasta(raw: str, header: str = ">sequence") -> str:
-    seq = sanitize_raw_sequence(raw)
-    if seq is None:
-        return ""
-    # Wrap at 60 chars for readability
+    seq = normalize_sequence(raw)
     lines = [header]
     for i in range(0, len(seq), 60):
-        lines.append(seq[i:i+60])
+        lines.append(seq[i:i + 60])
     return "\n".join(lines)

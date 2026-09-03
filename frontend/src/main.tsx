@@ -1,3 +1,7 @@
+import "@fontsource-variable/crimson-pro/wght.css"
+import "@fontsource/atkinson-hyperlegible/400.css"
+import "@fontsource/atkinson-hyperlegible/700.css"
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'

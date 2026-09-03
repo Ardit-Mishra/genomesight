@@ -1,30 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: ["class"],
   theme: {
     extend: {
-      colors: {
-        dark: {
-          950: '#0a0a0f',
-          900: '#12121a',
-          800: '#1a1a26',
-          700: '#262638',
-          600: '#383852',
-        },
-        genomics: {
-          green: '#10b981',
-          cyan: '#06b6d4',
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          amber: '#f59e0b',
-        }
-      },
       fontFamily: {
-        mono: ['"IBM Plex Mono"', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ["Crimson Pro", "Georgia", "serif"],
+        sans: ["Atkinson Hyperlegible", "Arial", "sans-serif"],
+      },
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: "hsl(var(--card))",
+        "card-foreground": "hsl(var(--card-foreground))",
+        primary: "hsl(var(--primary))",
+        "primary-foreground": "hsl(var(--primary-foreground))",
+        secondary: "hsl(var(--secondary))",
+        "secondary-foreground": "hsl(var(--secondary-foreground))",
+        muted: "hsl(var(--muted))",
+        "muted-foreground": "hsl(var(--muted-foreground))",
+        accent: "hsl(var(--accent))",
+        "accent-foreground": "hsl(var(--accent-foreground))",
+        destructive: "hsl(var(--destructive))",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
       },
     },
   },
