@@ -1,0 +1,31 @@
+/* GENERATED from design-system/tokens.json — do not edit. Run design-system/build.py. */
+:root {
+  --ds-ground: #11161D;  /* page background */
+  --ds-surface: #171E27;  /* panels, cards, sidebar */
+  --ds-surface-sunk: #0E131A;  /* wells, table headers, inset areas */
+  --ds-border: #232C36;  /* hairlines — elevation is a border, not a shadow */
+  --ds-border-strong: #33404E;  /* emphasised dividers, input edges */
+  --ds-ink: #E7ECF3;  /* primary text */
+  --ds-ink-muted: #8D9AAA;  /* secondary text, labels */
+  --ds-ink-faint: #5F6C7B;  /* tertiary, disabled */
+  --ds-accent: #6E9BFF;  /* measurement + interaction. Never used for status. */
+  --ds-accent-ink: #A9C4FF;  /* accent text on dark ground */
+  --ds-accent-soft: #16223A;  /* accent-tinted surface */
+  --ds-on-accent: #11161D;  /* text on an accent fill */
+  --ds-caveat: #D9A44F;  /* STATED LIMITATION ONLY. Seeing this means the app is qualifying a claim. */
+  --ds-caveat-surface: #241C0E;  /* caveat block background */
+  --ds-safe: #5FBF8F;  /* low risk / pass */
+  --ds-critical: #E06C75;  /* high risk / invalid input */
+  --ds-base-a: #5FBF8F;
+  --ds-base-c: #6E9BFF;
+  --ds-base-g: #D9A44F;
+  --ds-base-t: #E06C75;
+  --ds-base-u: #E06C75;
+  --ds-base-n: #7B8794;
+  --ds-font-ui: 'Bricolage Grotesque', 'Helvetica Neue', Arial, sans-serif;
+  --ds-font-mono: 'IBM Plex Mono', ui-monospace, Consolas, Menlo, monospace;
+  --ds-radius-sm: 4px;
+  --ds-radius-md: 6px;
+  --ds-radius-lg: 10px;
+  --ds-ease: cubic-bezier(.22,.7,.3,1);
+}

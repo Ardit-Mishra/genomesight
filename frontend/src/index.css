@@ -1,3 +1,5 @@
+@import './tokens.css';
+
 @font-face {
   font-family: 'Izayoi Monospaced';
   src: url('https://assets.fontdiff.com/webfonts/izayoi-monospaced-medium.woff2') format('woff2');
