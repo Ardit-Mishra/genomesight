@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from "react"
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
 import {
   Dna,
   FileUp,
@@ -35,6 +35,7 @@ import {
   findMotifs,
   findRestrictionSites,
   translateSequence,
+  warmBackend,
 } from "@/services/api"
 
 const SAMPLE = ">example_sequence\nATGGCCATTGTAATGGGCCGCTGAAAGGGTGCCCGATAG"
@@ -58,6 +59,7 @@ function App() {
   const [protein, setProtein] = useState("")
   const [activeOperation, setActiveOperation] = useState<Operation>(null)
   const [error, setError] = useState<string | null>(null)
+  const [backendAwake, setBackendAwake] = useState(false)
   const [seq1, setSeq1] = useState("ACGT")
   const [seq2, setSeq2] = useState("AGT")
   const [codingSequence, setCodingSequence] = useState("ATGGCCATTGTAATGGGCCGCTGAAAGGGTGCCCGATAG")
@@ -73,6 +75,18 @@ function App() {
   const composition = useMemo(() => analysis?.statistics.composition ?? {}, [analysis])
   const inputSummary = useMemo(() => summarizeInput(sequence), [sequence])
   const isBusy = activeOperation !== null
+
+  // Start Render waking the moment the page loads, not when the first request is sent. The free
+  // instance sleeps after ~15 minutes idle and takes ~50s to return; overlapping that with the time
+  // a visitor spends reading the page and pasting a sequence is the difference between a workbench
+  // that feels slow and one that feels broken. Fire and forget -- warmBackend never throws, and the
+  // real request has its own error handling and retry.
+  useEffect(() => {
+    let mounted = true
+    void warmBackend().then((ok) => { if (mounted && ok) setBackendAwake(true) })
+    return () => { mounted = false }
+  }, [])
+
 
   async function runAnalysis(content = sequence) {
     setActiveOperation("analysis")
@@ -221,7 +235,7 @@ function App() {
                   <Label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors hover:bg-muted focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background"><FileUp className="size-4" aria-hidden="true" />Upload FASTA/FASTQ<Input className="sr-only" type="file" accept=".fasta,.fa,.fastq,.fq,.txt" disabled={isBusy} onChange={loadFile} /></Label>
                   <Button className="min-h-11 sm:ml-auto" onClick={() => void runAnalysis()} disabled={isBusy || !sequence.trim()}>{activeOperation === "analysis" ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Play className="size-4" aria-hidden="true" />}Run analysis</Button>
                 </div>
-                {activeOperation === "analysis" && <div className="sequence-scan" role="status" aria-live="polite"><span className="font-mono text-xs text-primary">VALIDATING SEQUENCE</span><span className="text-xs text-muted-foreground">Normalizing IUPAC symbols and calculating composition</span></div>}
+                {activeOperation === "analysis" && <div className="sequence-scan" role="status" aria-live="polite"><span className="font-mono text-xs text-primary">VALIDATING SEQUENCE</span><span className="text-xs text-muted-foreground">{backendAwake ? "Normalizing IUPAC symbols and calculating composition" : "Waking the analysis service — the first request after it idles takes about 50 seconds"}</span></div>}
               </CardContent>
             </Card>
             {analysis && <AnalysisResults data={analysis} composition={composition} />}

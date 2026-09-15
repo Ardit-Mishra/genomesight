@@ -1,15 +1,34 @@
-name: Keep backend warm
+name: Backend liveness check
 
-# The Render free instance sleeps after ~15 minutes idle and the next visitor
-# waits ~50 seconds. A self-ping inside the app cannot fix this: once the
-# instance is asleep the process is gone, so there is nothing left to send the
-# ping. Only an external request can wake it, which is why this lives here.
+# This was called "Keep backend warm" and ran every 12 minutes, inside Render's
+# ~15-minute idle window. It does not keep anything warm, and the schedule was
+# the reason. Measured over 2026-09-11 to 2026-09-15:
 #
-# Every 12 minutes, inside the 15-minute idle window with margin for a late run
-# (GitHub's scheduler is best-effort, not punctual).
+#     scheduled interval   12 min
+#     runs expected        507
+#     runs that fired      30        (5.9%)
+#     gap: min / med / max 102 / 201 / 418 min
+#     gaps over Render's 15-min idle window   29 of 29
+#
+# GitHub's cron is best-effort and drops most high-frequency schedules on public
+# repositories. Asking for five runs an hour and getting one every three hours
+# means the instance is asleep essentially always -- while this workflow stayed
+# green, because each run that did fire succeeded. A green check for work that
+# is not happening is worse than no check.
+#
+# So the name and the cadence now match what this can actually deliver: a
+# periodic liveness check that verifies the API answers and reports which commit
+# is deployed, and which incidentally wakes the instance when it runs. Twice an
+# hour, because requesting five times that changed nothing except the size of a
+# queue GitHub discards.
+#
+# The cold start itself is handled where it can be: frontend/src/services/api.ts
+# calls warmBackend() on page load, so Render wakes while the visitor is reading
+# and pasting rather than after they press Analyze. Do not restore a tighter
+# cron here believing it substitutes for that.
 on:
   schedule:
-    - cron: "*/12 * * * *"
+    - cron: "0,30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Wake and verify the API
+      - name: Verify the API answers, and wake it if it was asleep
         run: |
           URL="https://genomesight-api.onrender.com/api/health"
 

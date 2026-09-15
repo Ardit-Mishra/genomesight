@@ -126,6 +126,40 @@ export const checkHealth = async (): Promise<{ status: string; service: string; 
   return response.data;
 };
 
+/**
+ * Start the backend waking the moment the page loads, and resolve when it answers.
+ *
+ * The API runs on a Render free instance, which sleeps after ~15 minutes idle and then takes
+ * roughly 50 seconds to come back. Nothing was triggering that wake: the repository has a
+ * keep-alive workflow, but GitHub throttles high-frequency cron on public repositories hard enough
+ * that over four days it fired 30 of a scheduled 507 runs -- a median gap of 201 minutes against a
+ * 15-minute idle window, so the instance was effectively always asleep. The one component that
+ * pinged /api/health on mount, Navbar.tsx, was never rendered by anything.
+ *
+ * So the first visitor to press Analyze paid the full cold start. This does not make the wake
+ * faster; it moves it off the critical path, to the seconds a visitor spends reading the page and
+ * pasting a sequence.
+ *
+ * Deliberately not routed through apiClient: its retry interceptor would turn one slow warm-up
+ * into four overlapping requests against an instance that is already booting. One patient request
+ * is the correct shape here, and a failure is not worth reporting -- the real request that follows
+ * has its own error handling.
+ */
+export const warmBackend = async (): Promise<boolean> => {
+  const controller = new AbortController();
+  // 75s: a cold start is ~50s, and a warm-up that gives up early would report the backend down
+  // while it is merely waking -- the same mistake the keep-alive workflow's --max-time avoids.
+  const timer = setTimeout(() => controller.abort(), 75_000);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/health`, { signal: controller.signal });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 // ---------------------------------------------------------------------------
 // ORF detection, motif search and restriction sites
 // Ported from the Streamlit workbench so the deployed app regains the
