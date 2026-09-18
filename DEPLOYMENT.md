@@ -75,10 +75,13 @@ Three changes came out of it:
 
 ## Known operational limits
 
-- **Free-tier cold start.** The Render instance spins down when idle; the first request
-  after a quiet period can take ~50 seconds. The frontend retries with exponential
-  backoff, so it degrades gracefully rather than failing — but a first visitor waits.
-  `backend/app/core/pinger.py` exists and is not yet wired to anything.
+- **Free-tier cold start.** The Render instance spins down when idle; a request
+  after a quiet period can take ~50 seconds. On page load, the frontend starts one
+  bounded `/api/health` request so that wake overlaps with reading and pasting input;
+  analysis requests also retain exponential-backoff retries. This improves the first
+  interaction but does not eliminate the wait for a visitor who runs an analysis
+  immediately. GitHub's scheduled liveness check is diagnostic only: its cadence is
+  not reliable enough to keep a free-tier service awake.
 - **Native k-mer accelerator.** Built inside the Docker image. If the build fails the
   image still ships and the service runs the pure-Python path — `/api/health` reports
   `kmer_engine`, so which path is live is always visible rather than assumed.

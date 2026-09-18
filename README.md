@@ -146,8 +146,9 @@ Stated plainly, because a tool that claims no weaknesses invites the reader to f
 - **The k-mer benchmark is single-machine, single-run.** 12 configurations on one Windows
   desktop, best-of-N timing, no confidence intervals. It shows the native path is faster
   here; it is not a portable performance claim.
-- **The hosted backend sleeps.** On the free tier the first request after ~15 minutes idle
-  waits ~50 seconds. The client retries transparently, but the wait is real.
+- **The hosted backend sleeps.** On the free tier a request after ~15 minutes idle
+  can wait ~50 seconds. The page begins waking the service on load and the client retries
+  analysis requests, but a visitor who runs work immediately can still experience that wait.
 - **Large inputs are held in memory.** There is no streaming parser, so genome-scale FASTA
   will exhaust memory rather than degrade gracefully.
 
