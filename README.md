@@ -8,7 +8,9 @@ analysis of DNA and RNA. Composition and GC content, k-mer profiling, six-frame 
 detection, IUPAC motif and restriction-site search, codon usage with RSCU, translation,
 and pairwise alignment.
 
-**Live:** https://genomesight-frontend.vercel.app · **API:** https://genomesight-api.onrender.com
+**Live:** [genomesight.arditmishra.com](https://genomesight.arditmishra.com)
+
+**Read first:** [what was decided and why there is no model](DECISIONS.md)
 
 No model sits in the factual path. The same input always produces the same result.
 
@@ -160,7 +162,7 @@ Every number in this README comes from a committed artifact:
 |---|---|
 | 67 tests | `cd backend && pytest tests/ -q` |
 | 5.27×–11.04× k-mer speedup | `cd backend && python benchmarks/benchmark_kmer.py` |
-| the deployed commit | `curl https://genomesight-api.onrender.com/api/health` |
+| the deployed commit | `curl https://genomesight.arditmishra.com/api/health` |
 
 ## Tests
 
