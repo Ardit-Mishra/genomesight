@@ -1,7 +1,27 @@
-fastapi==0.110.0
-uvicorn==0.28.0
-biopython==1.83
-numpy==1.26.4
-pydantic==2.6.4
-python-multipart==0.0.9
-requests==2.31.0
+# Runtime dependencies for the FastAPI backend. This file is what the Docker
+# image installs, so every pin here ships to production.
+#
+# Audited 2026-09-15 with `pip-audit -r requirements.txt`, which reported 11
+# advisories across four packages. Three of those packages turned out to be
+# imported by nothing:
+#
+#   requests           no `import requests` anywhere under app/
+#   python-multipart   no endpoint takes UploadFile/File/Form, and the frontend
+#                      posts JSON -- it reads the FASTA client-side
+#   numpy              no `import numpy`; it is here only because biopython
+#                      depends on it
+#
+# Removing the first two cleared 10 of the 11 advisories without changing a line
+# of application code. numpy stays, pinned, because biopython needs it and this
+# file pins exactly so a rebuild is reproducible.
+#
+# starlette is pinned explicitly even though fastapi pulls it in: it was the
+# package carrying seven of the advisories, and an unpinned transitive dependency
+# is invisible to anyone reading this file for what is deployed.
+
+fastapi==0.141.1
+starlette==1.6.0
+pydantic==2.13.5
+uvicorn==0.37.0
+biopython==1.88
+numpy==2.3.4
